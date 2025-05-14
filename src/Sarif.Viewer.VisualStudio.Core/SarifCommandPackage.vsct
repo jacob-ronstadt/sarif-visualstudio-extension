@@ -51,8 +51,7 @@
           <ButtonText></ButtonText>
         </Strings>
       </Menu>
-    </Menus>
-
+	</Menus>
     <!-- In this section you can define new menu groups. A menu group is a container for
          other menus or buttons (commands); from a visual point of view you can see the
          group as the part of a menu contained between two lines. The parent of a group
@@ -182,7 +181,190 @@
       </Button>
     </Buttons>
   </Commands>
+	
+  <Commands package="guidCodeQLCommonPackageString">
+		<!-- Inside this section we have different sub-sections: one for the menus, another  
+    for the menu groups, one for the buttons (the actual commands), one for the combos 
+    and the last one for the bitmaps used. Each element is identified by a command id that  
+    is a unique pair of guid and numeric identifier; the guid part of the identifier is usually  
+    called "command set" and is used to group different command inside a logically related  
+    group; your package should define its own command set in order to avoid collisions  
+    with command ids defined by other packages. -->
 
+		<!-- In this section we define the new WDK CodeQL Menu that will be the root menu. 
+    We set the visibility to be dynamic, since this is a contextual menu that only 
+    appears when a CodeQL project is loaded. -->
+	<Menus>
+		<Menu guid="guidCodeQLCommonCommandSet" id="CodeQLMenu" priority="0x700" type="Menu">
+			<Parent guid="guidCodeQLCommonCommandSet" id="CodeQLGroup"/>
+			<CommandFlag>AlwaysCreate</CommandFlag>
+			<CommandFlag>DynamicVisibility</CommandFlag>
+			<Strings>
+				<ButtonText>CodeQ&amp;L</ButtonText>
+			</Strings>
+		</Menu>
+
+		<Menu guid="guidCodeQLCommonCommandSet" id="CodeQLToolbar" type="Toolbar" priority="0x0100">
+			<CommandFlag>AlwaysCreate</CommandFlag>
+			<CommandFlag>DynamicVisibility</CommandFlag>
+			<Strings>
+				<CommandName>CodeQL</CommandName>
+				<ButtonText>CodeQL</ButtonText>
+				<MenuText>CodeQL</MenuText>
+				<ToolTipText>CodeQL Toolbar</ToolTipText>
+			</Strings>
+		</Menu>
+	</Menus>
+
+	<!-- In this section you can define new menu groups. A menu group is a container for 
+        other menus or buttons (commands); from a visual point of view you can see the 
+        group as the part of a menu contained between two lines. The parent of a group 
+        must be a menu. -->
+	<Groups>
+
+		<!-- Root WDK Menu Group is defined here. -->
+		<Group guid="guidCodeQLCommonCommandSet" id="CodeQLMenuGroup" priority="0x0600">
+			<Parent guid="guidCodeQLCommonCommandSet" id="CodeQLMenu"/>
+		</Group>
+		<Group guid="guidCodeQLCommonCommandSet" id="CodeQLGroup" priority="0x0700">
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_TOOL_MAINMENU" />
+		</Group>
+		<Group guid="guidCodeQLCmdSet" id="CodeQLMenuGroup1" priority="0x0600">
+			<Parent guid="guidCodeQLCommonCommandSet" id="CodeQLMenu"/>
+		</Group>
+		<Group guid="guidCodeQLCmdSet" id="CodeQLMenuGroup2" priority="0x0601">
+			<Parent guid="guidCodeQLCommonCommandSet" id="CodeQLMenu"/>
+		</Group>
+		<Group guid="guidCodeQLCmdSet" id="CodeQLToolbarGroup1"  priority="0x0000">
+			<Parent guid="guidCodeQLCommonCommandSet" id="CodeQLToolbar"/>
+		</Group>
+		<Group guid="guidCodeQLCmdSet" id="CodeQLToolbarGroup2"  priority="0x0000">
+			<Parent guid="guidCodeQLCommonCommandSet" id="CodeQLToolbar"/>
+		</Group>
+	</Groups>
+
+	  <Buttons>
+		  <!--To define a menu group you have to specify its ID, the parent menu and its display priority. 
+          The command is visible and enabled by default. If you need to change the visibility, status, etc, you can use
+          the CommandFlag node.
+          You can add more than one CommandFlag node e.g.:
+              <CommandFlag>DefaultInvisible</CommandFlag>
+              <CommandFlag>DynamicVisibility</CommandFlag>
+          If you do not want an image next to your command, remove the Icon node or set it to <Icon guid="guidOfficeIcon" id="msotcidNoIcon" /> -->
+		  <Button guid="guidCodeQLCmdSet" id="cmdidCodeQLDatabaseCommand" priority="0x0100" type="Button">
+			  <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup1" />
+			  <Icon guid="CodeQLIcons" id="CodeQLIconDB" />
+			  <Strings>
+				  <CommandName>cmdidCodeQLDatabaseCommand</CommandName>
+				  <ButtonText>Generate CodeQL Database</ButtonText>
+				  <MenuText>Generate CodeQL Database</MenuText>
+				  <ToolTipText>Create CodeQL database for selected project...</ToolTipText>
+			  </Strings>
+		  </Button>
+
+		  <Button guid="guidCodeQLCmdSet" id="cmdidCodeQLAnalyzeCommand" priority="0x0101" type="Button">
+			  <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup1" />
+			  <Icon guid="CodeQLIcons" id="CodeQLIconAnalyze" />
+			  <Strings>
+				  <CommandName>cmdidCodeQLAnalyzeCommand</CommandName>
+				  <ButtonText>Run Selected CodeQL Queries</ButtonText>
+				  <MenuText>Run Selected CodeQL CodeQL Queries</MenuText>
+				  <ToolTipText>Run Selected CodeQL CodeQL Queries...</ToolTipText>
+			  </Strings>
+		  </Button>
+
+		  <Button guid="guidCodeQLCmdSet" id="cmdidStaticToolsLogoCommand" priority="0x0122" type="Button">
+			  <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup1"/>
+			  <Icon guid="IconLogo" id="IconLogo32" />
+			  <Strings>
+				  <CommandName>cmdidStaticToolsLogoCommand</CommandName>
+				  <ButtonText>Create CodeQL Verification Log</ButtonText>
+				  <MenuText>Create CodeQL Verification Log</MenuText>
+				  <ToolTipText>Create CodeQL Verification Log for Static Tools Logo</ToolTipText>
+			  </Strings>
+		  </Button>
+
+		  <Button guid="guidCodeQLCmdSet" id="cmdiCodeQLLoadQueriesCommand" priority="0x0122" type="Button">
+			  <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup1"/>
+			  <Icon guid="IconLogo" id="IconLogo32" />
+			  <Strings>
+				  <CommandName>cmdiCodeQLLoadQueriesCommand</CommandName>
+				  <ButtonText>Load All Available Queries</ButtonText>
+				  <MenuText>Load All Available Queries</MenuText>
+				  <ToolTipText>Search for all locally available queries and load them into the drop-down</ToolTipText>
+			  </Strings>
+		  </Button>
+
+		  <Button guid="guidCodeQLCmdSet" id="cmdidCodeQLStopCommand" priority="0x0133" type="Button">
+			  <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup1"/>
+			  <Icon guid="CodeQLIcons" id="CodeQLIconTrash" />
+			  <Strings>
+				  <CommandName>cmdidCodeQLStopCommand</CommandName>
+				  <ButtonText>Stop CodeQL Process</ButtonText>
+				  <MenuText>Stop CodeQL Process</MenuText>
+				  <ToolTipText>Stop CodeQL Process</ToolTipText>
+			  </Strings>
+		  </Button>
+
+		  <!-- Add buttons to toolbar -->
+
+
+		  <Button guid="guidCodeQLCmdSet" id="cmdidCodeQLAnalyzeCommand" priority="0x0103" type="Button">
+			  <Parent guid="guidCodeQLCmdSet" id="CodeQLToolbarGroup1" />
+			  <Icon guid="CodeQLIcons" id="CodeQLIconAnalyze" />
+			  <Strings>
+				  <CommandName>cmdidCodeQLAnalyzeCommand</CommandName>
+				  <ButtonText>Run Selected CodeQL CodeQL Queries</ButtonText>
+				  <ToolTipText>Run Selected CodeQL CodeQL Queries</ToolTipText>
+			  </Strings>
+		  </Button>
+
+		  <Button guid="guidCodeQLCmdSet" id="cmdidStaticToolsLogoCommand" priority="0x0122" type="Button">
+			  <Parent guid="guidCodeQLCmdSet" id="CodeQLToolbarGroup1"/>
+			  <Icon guid="IconLogo" id="IconLogo32" />
+			  <Strings>
+				  <CommandName>cmdidStaticToolsLogoCommand</CommandName>
+				  <ButtonText>Create CodeQL Verification Log...</ButtonText>
+				  <MenuText>Create CodeQL Verification Log</MenuText>
+				  <ToolTipText>Create CodeQL Verification Log for Static Tools Logo</ToolTipText>
+			  </Strings>
+		  </Button>
+
+	  </Buttons>
+
+	  <Combos>
+		  <Combo guid="guidCodeQLCmdSet"
+				 id="cmidCodeQLCombo"
+				 priority="0x0100" type="DynamicCombo"
+				 idCommandList="cmdidComboGetList"
+				 defaultWidth="130">
+			  <Parent guid="guidCodeQLCmdSet"
+					  id="CodeQLToolbarGroup1" />
+			  <CommandFlag>IconAndText</CommandFlag>
+			  <CommandFlag>CommandWellOnly</CommandFlag>
+			  <CommandFlag>StretchHorizontally</CommandFlag>
+			  <Strings>
+				  <CommandName>QuerySuite</CommandName>
+				  <ButtonText>CodeQL</ButtonText>
+			  </Strings>
+		  </Combo>
+	  </Combos>
+
+	  <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
+	  <Bitmaps>
+		  <!--  The bitmap id is defined in a way that is a little bit different from the others: 
+            the declaration starts with a guid for the bitmap strip, then there is the resource id of the 
+            bitmap strip containing the bitmaps and then there are the numeric ids of the elements used 
+            inside a button definition. An important aspect of this declaration is that the element id 
+            must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
+		  <Bitmap guid="CodeQLIcons" href="..\Microsoft.VisualStudio.CodeAnalysis.CodeQL\Resources\MenuItemsImages.png" usedList="CodeQLIconLogo, CodeQLIconAnalyze, CodeQLIconAnalyze, CodeQLIconTrash, CodeQLIconDB"/>
+		  <Bitmap guid="IconVerify" href="..\Microsoft.VisualStudio.CodeAnalysis.CodeQL\Resources\CodeQL.png"/>
+		  <Bitmap guid="IconLogo" href="..\Microsoft.VisualStudio.CodeAnalysis.CodeQL\Resources\certificate.png" usedList="IconLogo32"/>
+  		  <Bitmap guid="CodeQLCommonPackageImages" href="..\Microsoft.VisualStudio.CodeAnalysis.CodeQL\..\Microsoft.VisualStudio.CodeAnalysis.CodeQL\Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
+	  </Bitmaps>
+  </Commands>
+	
+	
   <Symbols>
     <!-- This is the package guid. -->
     <GuidSymbol name="guidOpenSarifFileCommandPackage" value="{b97edb99-282e-444c-8f53-7de237f2ec5e}" />
@@ -225,5 +407,56 @@
       <IDSymbol name="c4883543-de09-4989-83c2-16e40d105831" value="0x8B67"/>
     </GuidSymbol>
 
+    <!-- CodeQL -->
+	  <!-- This is the package guid. -->
+	  <GuidSymbol name="guidCodeQLCommonPackageString" value="{cf9f860b-255c-4886-9e7a-80ca874d0da9}" />
+
+	  <!-- This is the guid used to group the menu commands together -->
+	  <GuidSymbol name="guidCodeQLCommonCommandSet" value="{80fa2e7b-752e-4733-82ee-bc3a5f12c065}">
+		  <IDSymbol name="CodeQLMenuGroup" value="0x1020" />
+		  <IDSymbol name="CodeQLMenu" value="0x1021" />
+		  <IDSymbol name="CodeQLGroup" value="0x1023"/>
+		  <IDSymbol name="CodeQLToolbar" value="0x000E" />
+	  </GuidSymbol>
+
+	  <GuidSymbol name="CodeQLCommonPackageImages" value="{04d3f46d-3274-4fde-adb5-6f6d6e7609e1}" >
+		  <IDSymbol name="bmpPic1" value="1" />
+		  <IDSymbol name="bmpPic2" value="2" />
+		  <IDSymbol name="bmpPicSearch" value="3" />
+		  <IDSymbol name="bmpPicX" value="4" />
+		  <IDSymbol name="bmpPicArrows" value="5" />
+	  </GuidSymbol>
+	  <GuidSymbol name="guidCodeQLPkg" value="{3718ce5a-503f-4c55-8f70-3a4cc34fb1fb}" />
+
+	  <!-- This is the guid used to group the menu commands together -->
+	  <GuidSymbol name="guidCodeQLCmdSet" value="{4fc96981-3ec2-43c7-acf0-96d73b1203e8}">
+		  <IDSymbol name="CodeQLMenuGroup1" value="0x1020" />
+		  <IDSymbol name="CodeQLMenuGroup2" value="0x1021" />
+		  <IDSymbol name="cmdidCodeQLAnalyzeCommand" value="0x0100" />
+		  <IDSymbol name="cmdidCodeQLStopCommand" value="0x0110" />
+		  <IDSymbol name="cmdiCodeQLLoadQueriesCommand" value="0x0111" />
+		  <IDSymbol name="cmdidStaticToolsLogoCommand" value="0x0122"/>
+		  <IDSymbol name="cmdidCodeQLDatabaseCommand" value="0x133"/>
+		  <IDSymbol name="cmidCodeQLCombo" value="0x155"/>
+		  <IDSymbol name="cmdidComboGetList" value="0x156"/>
+		  <IDSymbol name="CodeQLToolbar" value="0x1000" />
+		  <IDSymbol name="CodeQLToolbarGroup1" value="0x1050" />
+		  <IDSymbol name="CodeQLToolbarGroup2" value="0x1150" />
+	  </GuidSymbol>
+
+	  <GuidSymbol name="CodeQLIcons" value="{0db8ff03-1550-490f-8c25-ddaeba988a75}" >
+		  <IDSymbol name="CodeQLIconLogo" value="1" />
+		  <IDSymbol name="CodeQLIconAnalyze" value="3" />
+		  <IDSymbol name="CodeQLIconTrash" value="4" />
+		  <IDSymbol name="CodeQLIconDB" value="5" />
+	  </GuidSymbol>
+
+	  <GuidSymbol name="IconVerify" value="{FFA9D4AC-7B75-4117-AB06-D3D38E3B4388}">
+		  <IDSymbol name="IconVerify32" value="1"/>
+	  </GuidSymbol>
+
+	  <GuidSymbol name="IconLogo" value="{AFB0228D-93D1-4B9E-9A61-D78C90FC9918}">
+		  <IDSymbol name="IconLogo32" value="1"/>
+	  </GuidSymbol>
   </Symbols>
 </CommandTable>
