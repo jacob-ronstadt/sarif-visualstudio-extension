@@ -273,24 +273,13 @@
 			  </Strings>
 		  </Button>
 
-		  <Button guid="guidCodeQLCmdSet" id="cmdidStaticToolsLogoCommand" priority="0x0122" type="Button">
-			  <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup1"/>
-			  <Icon guid="IconLogo" id="IconLogo32" />
-			  <Strings>
-				  <CommandName>cmdidStaticToolsLogoCommand</CommandName>
-				  <ButtonText>Create CodeQL Verification Log</ButtonText>
-				  <MenuText>Create CodeQL Verification Log</MenuText>
-				  <ToolTipText>Create CodeQL Verification Log for Static Tools Logo</ToolTipText>
-			  </Strings>
-		  </Button>
-
 		  <Button guid="guidCodeQLCmdSet" id="cmdiCodeQLLoadQueriesCommand" priority="0x0122" type="Button">
 			  <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup1"/>
 			  <Icon guid="IconLogo" id="IconLogo32" />
 			  <Strings>
 				  <CommandName>cmdiCodeQLLoadQueriesCommand</CommandName>
-				  <ButtonText>Load All Available Queries</ButtonText>
-				  <MenuText>Load All Available Queries</MenuText>
+				  <ButtonText>Reload Available Queries</ButtonText>
+				  <MenuText>Reload Available Queries</MenuText>
 				  <ToolTipText>Search for all locally available queries and load them into the drop-down</ToolTipText>
 			  </Strings>
 		  </Button>
@@ -318,18 +307,6 @@
 				  <ToolTipText>Run Selected CodeQL CodeQL Queries</ToolTipText>
 			  </Strings>
 		  </Button>
-
-		  <Button guid="guidCodeQLCmdSet" id="cmdidStaticToolsLogoCommand" priority="0x0122" type="Button">
-			  <Parent guid="guidCodeQLCmdSet" id="CodeQLToolbarGroup1"/>
-			  <Icon guid="IconLogo" id="IconLogo32" />
-			  <Strings>
-				  <CommandName>cmdidStaticToolsLogoCommand</CommandName>
-				  <ButtonText>Create CodeQL Verification Log...</ButtonText>
-				  <MenuText>Create CodeQL Verification Log</MenuText>
-				  <ToolTipText>Create CodeQL Verification Log for Static Tools Logo</ToolTipText>
-			  </Strings>
-		  </Button>
-
 	  </Buttons>
 
 	  <Combos>
@@ -435,7 +412,6 @@
 		  <IDSymbol name="cmdidCodeQLAnalyzeCommand" value="0x0100" />
 		  <IDSymbol name="cmdidCodeQLStopCommand" value="0x0110" />
 		  <IDSymbol name="cmdiCodeQLLoadQueriesCommand" value="0x0111" />
-		  <IDSymbol name="cmdidStaticToolsLogoCommand" value="0x0122"/>
 		  <IDSymbol name="cmdidCodeQLDatabaseCommand" value="0x133"/>
 		  <IDSymbol name="cmidCodeQLCombo" value="0x155"/>
 		  <IDSymbol name="cmdidComboGetList" value="0x156"/>

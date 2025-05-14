@@ -62,7 +62,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.UnitTests.CodeFinding
         }
 
         private const string code2 =
-            @"double Class1::Foo (double a)
+            @"double CodeQLCommands::Foo (double a)
             {
                 return a + a;
             }
@@ -81,7 +81,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.UnitTests.CodeFinding
             System.Collections.Generic.List<string> identifiers = finder.GetScopeIdentifiers(span.Start, out bool isFunction);
             2.Should().Be(identifiers.Count);
             "Foo".Should().Be(identifiers[0]);
-            "Class1".Should().Be(identifiers[1]);
+            "CodeQLCommands".Should().Be(identifiers[1]);
             true.Should().Be(isFunction);
         }
 
@@ -113,7 +113,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.UnitTests.CodeFinding
             // When the line of code text is found multiple times, make sure
             // we find the right instance in the right class scope.
             var finder = new CppFinder(code2);
-            var query = new MatchQuery("return a + a", 3, "Class1::Foo", "0");
+            var query = new MatchQuery("return a + a", 3, "CodeQLCommands::Foo", "0");
             System.Collections.Generic.List<MatchResult> results = finder.FindMatchesWithFunction(query);
             1.Should().Be(results.Count);
             3.Should().Be(results[0].LineNumber);

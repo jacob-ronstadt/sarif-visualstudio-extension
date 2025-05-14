@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeFlowToTreeConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeLocationObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeLocationObjectTypeDescriptor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLCommand.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ContentTypes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeFinding\CodeFinder.cs" />
@@ -211,6 +212,15 @@
     <Compile Include="$(MSBuildThisFileDirectory)VersionControlParser\VersionControlParserFactory.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\ViewModelLocator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\AnalysisStepView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\CodeQLInstallHelper.xaml.cs">
+      <DependentUpon>CodeQLInstallHelper.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Views\CodeQLPackInstallHelper.xaml.cs">
+      <DependentUpon>CodeQLPackInstallHelper.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Views\InstallWindow.xaml.cs">
+      <DependentUpon>InstallWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Views\RelatedLocationsTreeView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\ResolveEmbeddedFileDialog.xaml.cs">
       <DependentUpon>ResolveEmbeddedFileDialog.xaml</DependentUpon>
@@ -303,11 +313,23 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Views\CodeQLInstallHelper.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Views\CodeQLPackInstallHelper.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="$(MSBuildThisFileDirectory)Views\Information.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="$(MSBuildThisFileDirectory)Views\InformationStringResources.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Views\InstallWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -28,6 +28,8 @@ using Microsoft.VisualStudio.Text.Tagging;
 
 using Newtonsoft.Json;
 
+using Sarif.Viewer.VisualStudio.Core.CodeQL;
+
 using ResultSourcesConstants = Microsoft.Sarif.Viewer.ResultSources.Domain.Models.Constants;
 
 using Task = System.Threading.Tasks.Task;
@@ -172,6 +174,8 @@ namespace Microsoft.Sarif.Viewer
             CodeAnalysisResultManager.Instance.Register();
             SarifToolWindowCommand.Initialize(this);
             ErrorListCommand.Initialize(this);
+            CodeQLCommand.Initialize(this);
+
             this.sarifFolderMonitor = new SarifFolderMonitor();
 
             if (await this.IsSolutionLoadedAsync())
