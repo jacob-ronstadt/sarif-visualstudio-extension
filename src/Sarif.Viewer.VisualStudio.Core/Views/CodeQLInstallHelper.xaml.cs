@@ -28,7 +28,7 @@ namespace Microsoft.SdvMenuCommand
         {
             if (string.IsNullOrEmpty(version))
             {
-                version = "2.21.0"; // TODO get latest version instead
+                throw new Exception("Version Error");
             }
 
             if (string.IsNullOrEmpty(installPath))

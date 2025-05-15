@@ -3,11 +3,22 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 using EnvDTE;
 
+using EnvDTE80;
+
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Setup.Configuration;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
+using Microsoft.VisualStudio.VCProjectEngine;
 
 namespace Microsoft.Sarif.Viewer
 {
@@ -179,5 +190,102 @@ namespace Microsoft.Sarif.Viewer
 
             return projectFullPath;
         }
-    }
+
+        internal static Project GetActiveProject()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            DTE2 dte = (DTE2)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+            Array activeSolutionProjects = dte.ActiveSolutionProjects as Array;
+            if (activeSolutionProjects.Rank <= 0 || activeSolutionProjects.GetLength(0) <= 0)
+            {
+                return null;
+            }
+            else if (activeSolutionProjects.Length > 1)
+            {
+                return null;
+            }
+
+            return activeSolutionProjects.GetValue(0) as Project;
+        }
+
+        internal static string GetProjectFileName(Project project)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            string fileName = null;
+            if (project != null)
+            {
+                try
+                {
+                    fileName = System.IO.Path.GetFileName(project.FullName);
+                }
+                catch (Exception e)
+                {
+                    if (e is ArgumentException || e is COMException)
+                    {
+                        // Sometimes if the project failed to load we might get E_INVALIDARG here from DTE
+                        Debug.Fail("Error while trying to obtain project name. \n" + e.ToString());
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            return fileName;
+        }
+
+        internal static string GetProjectDirectory(Project project)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            string directory = null;
+            if (project != null)
+            {
+                try
+                {
+                    directory = System.IO.Path.GetDirectoryName(project.FullName);
+                }
+                catch (Exception e)
+                {
+                    if (e is ArgumentException || e is COMException)
+                    {
+                        // Sometimes if the project failed to load we might get E_INVALIDARG here from DTE
+                        Debug.Fail("Error while trying to obtain project directory. \n" + e.ToString());
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            return directory;
+        }
+
+        internal static string GetProjectPropertyValue(Project project, string propertyName)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (IsVCProject(project))
+            {
+                ConfigurationManager cfgManager = project.ConfigurationManager;
+                if (cfgManager != null)
+                {
+                    Configuration activeConfig = cfgManager.ActiveConfiguration;
+                    if (activeConfig?.Properties != null)
+                    {
+                        Properties properties = activeConfig.Properties;
+
+                        Property property = properties.Item(propertyName);
+                        if (property?.Value != null)
+                        {
+                            // If we can't parse value of this property than we will return by default 'false'
+                            return property.Value.ToString();
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
 }

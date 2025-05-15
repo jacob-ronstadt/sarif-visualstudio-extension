@@ -5,12 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.Design;
+using System.Globalization;
 using System.Linq;
 using System.Management.Instrumentation;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-
+using EnvDTE;
+using EnvDTE80;
 using Microsoft;
 using Microsoft.CodeAnalysis.Sarif;
 using Microsoft.Sarif.Viewer;
@@ -19,6 +22,8 @@ using Microsoft.Sarif.Viewer.ErrorList;
 using Microsoft.Sarif.Viewer.Models;
 using Microsoft.Sarif.Viewer.ResultSources.Domain.Models;
 using Microsoft.Sarif.Viewer.Sarif;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -72,6 +77,9 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         /// Service for accessing menu commands.
         /// </summary>
         private readonly IMenuCommandService menuCommandService;
+
+        private static string _currentDropDownComboChoice;
+        private static HashSet<string> _dropDownComboChoicesDiscoveredSet;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeQLCommand"/> class.
@@ -167,10 +175,70 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             switch (menuCommand.CommandID.ID)
             {
                 case CodeQLAnalyzeCommandId:
+                    try
+                    {
+                        if (!CodeQLService.IsCodeQLTaskCompleted())
+                        {
+                            throw new Exception("CodeQL already running"); // FIXME
+                        }
+
+                        CodeQLService.Init();
+
+                        // remake database in case anything has changed.
+                        bool dbSuccessful = false; // FIXME // await CodeQLGenerateDatabaseAsync();
+                        if (dbSuccessful && CodeQLService.IsCodeQLTaskCompleted() && !CodeQLService.IsCodeQLTaskCanceled())
+                        {
+                            CodeQLService.Init(); // init again since starting a new CodeQL process
+                            await CodeQLService.CodeQLRunQuerySetAsync(_currentDropDownComboChoice.Trim().ToLower());
+                        }
+                        else
+                        {
+                            // await OutputToWindowPaneAsync("CodeQL", "Database generation failed, skipping query set execution.");
+                        }
+
+                        CodeQLService.Clear();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception(ex.ToString()); // FIXME
+                    }
+
                     break;
                 case CodeQLStopCommandId:
+                    try
+                    {
+                        CodeQLService.CancelIfRunning();
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex.GetType() == typeof(TaskCanceledException))
+                        {
+                            // MessageBox.Show("CodeQL process cancelled"); // FIXME
+                        }
+                        else
+                        {
+                            throw new Exception(ex.ToString()); // FIXME
+                        }
+                    }
+
                     break;
                 case CodeQLDatabaseCommandId:
+                    try
+                    {
+                        if (!CodeQLService.IsCodeQLTaskCompleted())
+                        {
+                            throw new Exception("CodeQL already running"); // FIXME
+                        }
+
+                        CodeQLService.Init();
+                        await CodeQLService.CodeQLGenerateDatabaseAsync();
+                        CodeQLService.Clear();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception(ex.ToString()); // FIXME
+                    }
+
                     break;
                 case CodeQLLoadQueriesCommandId:
                     break;
@@ -194,11 +262,11 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                 if (vOut != IntPtr.Zero)
                 {
                     // when vOut is non-NULL, the IDE is requesting the current value for the combo
-                    // TODO // Marshal.GetNativeVariantForObject(_currentDropDownComboChoice, vOut);
+                    Marshal.GetNativeVariantForObject(_currentDropDownComboChoice, vOut);
                 }
                 else if (newChoice != null)
                 {
-                    // TODO // _currentDropDownComboChoice = newChoice;
+                    _currentDropDownComboChoice = newChoice;
                 }
                 else
                 {
@@ -227,7 +295,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                 }
                 else if (vOut != IntPtr.Zero)
                 {
-                    // TODO // Marshal.GetNativeVariantForObject(_dropDownComboChoices, vOut);
+                    Marshal.GetNativeVariantForObject(_dropDownComboChoicesDiscoveredSet, vOut);
                 }
                 else
                 {
@@ -239,6 +307,34 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                 throw new ArgumentException("InParamIllegal"); // force an exception to be thrown
             }
         }
+
+
+        private async void CodeQLLoadAvailableQueries(object sender, EventArgs e)
+        {
+            try
+            {
+                await JoinableTaskFactory.RunAsync(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    //InstallWindow iw = new InstallWindow();
+                    //iw.DataContext = this;
+                    //iw.Show();
+                    var packList = await CodeQLRunner.FindPacksAsync();
+                    var queryList = await CodeQLRunner.FindQueriesAsync(packList, queriesNSuites: false);
+                    _dropDownComboChoicesDiscoveredSet.UnionWith(queryList);
+                    _dropDownComboChoices = _dropDownComboChoicesDefaultSet.Concat(_dropDownComboChoicesDiscoveredSet).ToArray();
+                    iw.Close();
+                    MessageBox.Show(_dropDownComboChoices.Length.ToString() + " available queries found.");
+
+                });
+            }
+            catch (Exception ex)
+            {
+                await ExceptionHandlerAsync(ex);
+            }
+        }
+
+
 
     }
 }

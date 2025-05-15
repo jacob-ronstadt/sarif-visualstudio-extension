@@ -13,6 +13,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeFlowToTreeConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeLocationObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeLocationObjectTypeDescriptor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLExceptions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLRunner.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLCommand.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ContentTypes.cs" />
