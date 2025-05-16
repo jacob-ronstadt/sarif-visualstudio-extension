@@ -388,56 +388,48 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 {
                     KillProcessAndChildren(codeqlProc.Id);
                 }
-
                 _ = eventHandled.TrySetCanceled();
             }))
             {
-                try
+                codeqlProc.StartInfo.FileName = "cmd.exe";
+                codeqlProc.StartInfo.Arguments = "/C " + "\"" + strCmdText + "\"";
+                codeqlProc.StartInfo.UseShellExecute = false;
+                codeqlProc.StartInfo.CreateNoWindow = true;
+                codeqlProc.StartInfo.RedirectStandardError = false;
+
+                if (outputFunc != null)
                 {
-                    codeqlProc.StartInfo.FileName = "cmd.exe";
-                    codeqlProc.StartInfo.Arguments = "/C " + "\"" + strCmdText + "\"";
-                    codeqlProc.StartInfo.UseShellExecute = false;
-                    codeqlProc.StartInfo.CreateNoWindow = true;
-                    codeqlProc.StartInfo.RedirectStandardError = false;
-
-                    if (outputFunc != null)
+                    codeqlProc.StartInfo.RedirectStandardOutput = true;
+                    codeqlProc.StartInfo.RedirectStandardError = true;
+                    codeqlProc.StartInfo.RedirectStandardInput = true;
+                    codeqlProc.OutputDataReceived += (sender, e) =>
                     {
-                        codeqlProc.StartInfo.RedirectStandardOutput = true;
-                        codeqlProc.StartInfo.RedirectStandardError = true;
-                        codeqlProc.StartInfo.RedirectStandardInput = true;
-                        codeqlProc.OutputDataReceived += (sender, e) =>
+                        if (!string.IsNullOrEmpty(e.Data))
                         {
-                            if (!string.IsNullOrEmpty(e.Data))
-                            {
-                                _ = outputFunc("CodeQL", e.Data);
-                            }
-                        };
-                        codeqlProc.ErrorDataReceived += (sender, e) =>
+                            _ = outputFunc("CodeQL", e.Data);
+                        }
+                    };
+                    codeqlProc.ErrorDataReceived += (sender, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
                         {
-                            if (!string.IsNullOrEmpty(e.Data))
-                            {
-                                _ = outputFunc("CodeQL", e.Data);
-                            }
-                        };
-                    }
-                    else
-                    {
-                        codeqlProc.StartInfo.RedirectStandardOutput = false;
-                    }
-
-                    codeqlProc.EnableRaisingEvents = true;
-                    codeqlProc.Exited += new EventHandler(proccessExitedFunc);
-
-                    _ = codeqlProc.Start();
-                    if (outputFunc != null)
-                    {
-                        codeqlProc.BeginOutputReadLine();
-                        codeqlProc.BeginErrorReadLine();
-                    }
+                            _ = outputFunc("CodeQL", e.Data);
+                        }
+                    };
                 }
-                catch (Exception ex)
+                else
                 {
-                    throw new Exception(ex.ToString());
+                    codeqlProc.StartInfo.RedirectStandardOutput = false;
+                }
+
+                codeqlProc.EnableRaisingEvents = true;
+                codeqlProc.Exited += new EventHandler(proccessExitedFunc);
+
+                _ = codeqlProc.Start();
+                if (outputFunc != null)
+                {
+                    codeqlProc.BeginOutputReadLine();
+                    codeqlProc.BeginErrorReadLine();
                 }
 
                 _ = await Task.WhenAny(eventHandled.Task);
@@ -511,32 +503,25 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
 
             string strCmdText = string.Empty;
+            string dbPath = Path.Combine(analysisDir, "codeql_db");
 
-            try
+            string[] procArr =
             {
-                string dbPath = Path.Combine(analysisDir, "codeql_db");
-
-                string[] procArr =
-                {
-                    codeQLExe, "database",
-                    "create", "\"" + dbPath + "\"",
-                    "--force-overwrite",
-                    "--language=cpp",
-                    "--source-root=" + "\"" + analysisDir + "\"",
-                    "--command=" + "\"" + buildCommand + "\"",
-                };
-                strCmdText = string.Join(" ", procArr);
-                if (!string.IsNullOrWhiteSpace(buildEnv))
-                {
-                    strCmdText = buildEnv + " " + strCmdText;
-                }
-
-                await RunCMDProcAsync(strCmdText, proccessExitedFunc, ct);
-            }
-            catch (Exception ex)
+                codeQLExe, "database",
+                "create", "\"" + dbPath + "\"",
+                "--force-overwrite",
+                "--language=cpp",
+                "--source-root=" + "\"" + analysisDir + "\"",
+                "--command=" + "\"" + buildCommand + "\"",
+            };
+            strCmdText = string.Join(" ", procArr);
+            if (!string.IsNullOrWhiteSpace(buildEnv))
             {
-                throw new Exception("Create DB Failed with command: " + strCmdText + " | " + ex.ToString(), ex);
+                strCmdText = buildEnv + " " + strCmdText;
             }
+
+            await RunCMDProcAsync(strCmdText, proccessExitedFunc, ct);
+           
         }
 
         /// <summary>
@@ -559,53 +544,46 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 proccessExitedFunc = ProcessExited;
             }
 
-            try
+            string dbPath = Path.Combine(analysisDir, "codeql_db");
+            if (!Directory.Exists(dbPath))
             {
-                string dbPath = Path.Combine(analysisDir, "codeql_db");
-                if (!Directory.Exists(dbPath))
-                {
-                    throw new DatabaseNotFinalizedException("Database not created");
-                }
-                else
-                {
-                    string lastLine = System.IO.File.ReadLines(Path.Combine(dbPath, "codeql-database.yml")).Last();
-                    if (!lastLine.Contains("true"))
-                    {
-                        throw new DatabaseNotFinalizedException("CodeQL database error");
-                    }
-                }
-
-                string resultsDir = Path.Combine(analysisDir, ".sarif");
-                if (!Directory.Exists(resultsDir))
-                {
-                    _ = Directory.CreateDirectory(resultsDir);
-                }
-
-                string resultsPath = Path.Combine(resultsDir, "results.sarif");
-
-                string[] procArr =
-                {
-                    codeQLExe, "database",
-                    "analyze", "\"" + dbPath + "\"",
-                    "-v",
-                    "--format=sarifv2.1.0",
-                    "--output=" + "\"" + resultsPath + "\"",
-                    query,
-                };
-
-                strCmdText = string.Join(" ", procArr);
-                if (!string.IsNullOrWhiteSpace(buildEnv))
-                {
-                    strCmdText = buildEnv + " " + strCmdText;
-                }
-
-                await RunCMDProcAsync(strCmdText, proccessExitedFunc, ct);
-                return resultsPath;
+                throw new DatabaseNotFinalizedException("Database not created");
             }
-            catch (Exception ex)
+            else
             {
-                throw new CodeQLException("Analyze DB Failed with command: " + strCmdText + " | " + ex.ToString(), ex);
+                string lastLine = System.IO.File.ReadLines(Path.Combine(dbPath, "codeql-database.yml")).Last();
+                if (!lastLine.Contains("true"))
+                {
+                    throw new DatabaseNotFinalizedException("CodeQL database error");
+                }
             }
+
+            string resultsDir = Path.Combine(analysisDir, ".sarif");
+            if (!Directory.Exists(resultsDir))
+            {
+                _ = Directory.CreateDirectory(resultsDir);
+            }
+
+            string resultsPath = Path.Combine(resultsDir, "results.sarif");
+
+            string[] procArr =
+            {
+                codeQLExe, "database",
+                "analyze", "\"" + dbPath + "\"",
+                "-v",
+                "--format=sarifv2.1.0",
+                "--output=" + "\"" + resultsPath + "\"",
+                query,
+            };
+
+            strCmdText = string.Join(" ", procArr);
+            if (!string.IsNullOrWhiteSpace(buildEnv))
+            {
+                strCmdText = buildEnv + " " + strCmdText;
+            }
+
+            await RunCMDProcAsync(strCmdText, proccessExitedFunc, ct);
+            return resultsPath;
         }
     }
 }

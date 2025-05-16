@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 using EnvDTE;
 
@@ -256,7 +257,7 @@ namespace Microsoft.Sarif.Viewer
             return directory;
         }
 
-        internal static string GetProjectPropertyValue(Project project, string propertyName)
+        internal static Configuration GetProjectActiveConfiguration(Project project)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             if (IsVCProject(project))
@@ -264,132 +265,47 @@ namespace Microsoft.Sarif.Viewer
                 ConfigurationManager cfgManager = project.ConfigurationManager;
                 if (cfgManager != null)
                 {
-                    Configuration activeConfig = cfgManager.ActiveConfiguration;
-                    if (activeConfig?.Properties != null)
-                    {
-                        Properties properties = activeConfig.Properties;
-
-                        Property property = properties.Item(propertyName);
-                        if (property?.Value != null)
-                        {
-                            // If we can't parse value of this property than we will return by default 'false'
-                            return property.Value.ToString();
-                        }
-                    }
+                    return cfgManager.ActiveConfiguration;
                 }
             }
+            return null;
+        }
+        internal static string GetProjectPropertyValue(Project project, string propertyName)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            Configuration activeConfig = GetProjectActiveConfiguration(project);
+            if (activeConfig != null && activeConfig?.Properties != null)
+            {
+                Properties properties = activeConfig.Properties;
 
+                Property property = properties.Item(propertyName);
+                if (property?.Value != null)
+                {
+                    // If we can't parse value of this property than we will return by default 'false'
+                    return property.Value.ToString();
+                }
+            }
             return null;
         }
 
-        /// <summary>
-        ///     This function validates if an instance of a Visual Studio installation is valid, from the same
-        ///     version than the libraries this code is beign built against, and contains the VC Tools package.
-        /// </summary>
-        /// <param name="instance">Setup instance to validate. </param>
-        /// <returns>True if the instance is valid, false otherwise.</returns>
-        internal static bool IsInstanceVcValid(ISetupInstance instance)
-        {
-            string visualStudioVcToolsPackage =
-            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
-
-            var instance2 = (ISetupInstance2)instance;
-            InstanceState state = instance2.GetState();
-
-            InstanceState validState = InstanceState.Local | InstanceState.Registered | InstanceState.NoErrors;
-
-            if ((state & validState) != validState)
-            {
-                return false; // Ignore invalid instance
-            }
-
-            bool? vc = instance2?.GetPackages()?.Any(
-                package => string.Equals(package.GetId(), visualStudioVcToolsPackage, StringComparison.OrdinalIgnoreCase));
-            return vc == true;
-        }
-
-        /// <summary>
-        ///     Finds the current Visual Studio instance the Windows Driver Kit is running on. If no Visual Studio
-        ///     instance is running, then it finds the first complete Visual Studio instance which contains
-        ///     the VC Tools package.
-        /// </summary>
-        /// <returns>The current VS instance or, if none is running, the first one with VC tools.</returns>
-        internal static ISetupInstance GetVisualStudioInstance()
-        {
-            try
-            {
-                var query = new SetupConfiguration();
-                ISetupInstance cur;
-
-                try
-                {
-                    cur = query.GetInstanceForCurrentProcess();
-                }
-                catch (Exception)
-                {
-                    cur = null; // No instance for current process found
-                }
-
-                if (cur != null)
-                {
-                    return cur;
-                }
-                else
-                {
-                    var query2 = (ISetupConfiguration2)query;
-                    IEnumSetupInstances e = query2.EnumAllInstances();
-
-                    int fetched;
-                    var instances = new ISetupInstance[1];
-                    do
-                    {
-                        e.Next(1, instances, out fetched);
-                        if (fetched > 0 && IsInstanceVcValid(instances[0]))
-                        {
-                            return instances[0];
-                        }
-                    }
-                    while (fetched > 0);
-                }
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        ///     This function gets the installation path of a Visual Studio installation instance.
-        /// </summary>
-        /// <param name="instance">Setup instance to obtain path. </param>
-        /// <returns>Installation path of the given instance. </returns>
-        internal static string GetInstancePath(ISetupInstance instance)
-        {
-            var instance2 = (ISetupInstance2)instance;
-
-            return instance2.GetInstallationPath();
-        }
-
-        /// <summary>
-        /// retrieves VS install path from registry.
-        /// </summary>
-        /// <returns> string of VS install path. </returns>
         internal static string GetVisualStudioFolder()
         {
-            string result = string.Empty;
+            SetupConfiguration sc = new SetupConfiguration();
+            return sc.GetInstanceForCurrentProcess().GetInstallationPath();
+        }
 
-            // Dev15 upwards: get VS installation via COM
-            ISetupInstance instance = GetVisualStudioInstance();
-            if (instance != null)
+        internal static async System.Threading.Tasks.Task BuildProjectAsync()
+        {
+            TaskCompletionSource<bool> buildTcs = new TaskCompletionSource<bool>();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            DTE2 dte = (DTE2)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+            BuildEvents buildEvents = dte.Events.BuildEvents;
+            buildEvents.OnBuildDone += (scope, action) =>
             {
-                result = GetInstancePath(instance);
-            }
-
-            // Trim any path characters
-            result = result.Trim(new[] { Path.DirectorySeparatorChar });
-            return result;
+                buildTcs.TrySetResult(true);
+            };
+            dte.ExecuteCommand("Build.BuildSelection");
+            await buildTcs.Task;
         }
     }
 }

@@ -166,7 +166,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                         CodeQLService.Instance.InitTask();
 
                         // remake database in case anything has changed.
-                        bool dbSuccessful = false; // FIXME // await CodeQLGenerateDatabaseAsync();
+                        bool dbSuccessful = await CodeQLService.Instance.CodeQLGenerateDatabaseAsync();
                         if (dbSuccessful
                             && CodeQLService.Instance.IsCodeQLTaskCompleted())
                         {

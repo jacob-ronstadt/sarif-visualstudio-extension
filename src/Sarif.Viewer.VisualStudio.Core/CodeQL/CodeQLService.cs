@@ -11,10 +11,17 @@ using System.Threading.Tasks;
 
 using EnvDTE;
 
+using EnvDTE80;
+
+using Microsoft.CodeAnalysis.Sarif.Converters;
 using Microsoft.Sarif.Viewer;
+using Microsoft.Sarif.Viewer.ErrorList;
+using Microsoft.Sarif.Viewer.Services;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
+
 
 namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 {
@@ -103,12 +110,12 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         {
             List<string> packList = await CodeQLRunner.Instance.FindPacksAsync();
             List<string> queryList = await CodeQLRunner.Instance.FindQueriesAsync(packList, queriesNSuites: false);
-            return packList.ToArray();
+            return queryList.ToArray();
         }
 
         public async System.Threading.Tasks.Task CodeQLRunQuerySetAsync(string querySet)
         {
-           
+            
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             string visualStudioShellPath = ProjectHelper.GetVisualStudioFolder();
             Project project = ProjectHelper.GetActiveProject();
@@ -130,16 +137,51 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             {
                 // queriesList = await runner.GetQueriesFromSuiteAsync(querySet);
             }
-
-            // await SarifViewerUtils.OpenSarifLogAsync(sarifResults);
+            string sarifResults = await CodeQLRunner.Instance.RunCodeQLQuerySetAsync(querySet, _cancelToken.Token);
+            try
+            {
+                await ErrorListService.ProcessLogFileWithTracesAsync(sarifResults, ToolFormat.None, promptOnLogConversions: true, cleanErrors: true, openInEditor: false).ConfigureAwait(continueOnCapturedContext: false);
+                new DataService().CloseEnhancedResultData(cookie: 0);
+            }
+            catch (InvalidOperationException)
+            {
+                VsShellUtilities.ShowMessageBox(Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider,
+                                                string.Format(Resources.LogOpenFail_InvalidFormat_DialogMessage, Path.GetFileName(sarifResults)),
+                                                null, // title
+                                                OLEMSGICON.OLEMSGICON_CRITICAL,
+                                                OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                                                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+            }            // await SarifViewerUtils.OpenSarifLogAsync(sarifResults);
 
             _ = _taskCompleted.TrySetResult(true);
         }
 
         public async System.Threading.Tasks.Task<bool> CodeQLGenerateDatabaseAsync()
         {
-            // TODO
-            await System.Threading.Tasks.Task.Delay(1000);
+            string arch = "";
+            string configName="";
+
+            await ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                await ProjectHelper.BuildProjectAsync();
+                // TODO check if build failed 
+                Project activeProject = ProjectHelper.GetActiveProject();
+                Configuration config = ProjectHelper.GetProjectActiveConfiguration(activeProject);
+
+                arch = config.PlatformName;
+                configName = config.ConfigurationName;
+
+                string projectDir = ProjectHelper.GetProjectDirectory(activeProject);
+                string startCommand = "\"" + Path.Combine(ProjectHelper.GetVisualStudioFolder(), @"VC\Auxiliary\Build\vcvarsall.bat") + "\" " + arch + " && cd /d \"" + projectDir + "\" &&";
+                
+                CodeQLRunner.Instance.Initialize(projectDir, startCommand);
+            });
+          
+            string buildCmd = "msbuild /t:rebuild /p:Configuration=" + configName + " /p:Platform=" + arch;
+            await CodeQLRunner.Instance.GenerateDatabaseAsync(buildCmd, _cancelToken.Token);
+            _taskCompleted.TrySetResult(true);
             return true;
         }
     }
