@@ -5,7 +5,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace Microsoft.SdvMenuCommand
+namespace Microsoft.Sarif.Viewer.Views
 {
     /// <summary>
     /// Interaction logic for CodeQLPackInstallHelper.xaml.

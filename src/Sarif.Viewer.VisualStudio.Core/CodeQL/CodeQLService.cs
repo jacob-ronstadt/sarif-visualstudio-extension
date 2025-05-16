@@ -33,7 +33,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         private static CancellationTokenSource _cancelToken;
         private static TaskCompletionSource<bool> _taskCompleted;
         private static string[] _availableQueries;
-        
+        private static bool _isInstalled;
         private static CodeQLService _instance = null;
 
         /// <summary>
@@ -54,6 +54,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 
         private CodeQLService()
         {
+            _isInstalled = false;
             _taskCompleted = null;
             _cancelToken = null;
             _availableQueries = null;
@@ -111,6 +112,16 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             List<string> packList = await CodeQLRunner.Instance.FindPacksAsync();
             List<string> queryList = await CodeQLRunner.Instance.FindQueriesAsync(packList, queriesNSuites: false);
             return queryList.ToArray();
+        }
+
+        public bool CodeQLIsInstalled()
+        {
+            // avoid starting a process every time
+            if (!_isInstalled)
+            {
+                _isInstalled = !string.IsNullOrEmpty(CodeQLRunner.Instance.GetInstalLocation());
+            }
+            return _isInstalled;
         }
 
         public async System.Threading.Tasks.Task CodeQLRunQuerySetAsync(string querySet)

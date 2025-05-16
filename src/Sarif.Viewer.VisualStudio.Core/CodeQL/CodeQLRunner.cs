@@ -152,7 +152,6 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task InstallPackAsync(string pack, string version)
         {
-            _ = GetInstalLocation();
             string output = await RunCodeQLProcAsync("pack download " + pack + "@" + version + " --allow-prerelease --force -v");
             foreach (string line in output.Split(
                                new string[] { "\r\n", "\r", "\n" },
@@ -276,7 +275,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// </summary>
         /// <returns>The installation path of CodeQL.</returns>
         /// <exception cref="CodeQLExeNotFoundException">Thrown when CodeQL is not found.</exception>
-        private  string GetInstalLocation()
+        public string GetInstalLocation()
         {
             if (System.IO.File.Exists(defaultCodeQLPath))
             {
@@ -304,19 +303,19 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
 
                 if (output == null || string.IsNullOrEmpty(output))
                 {
-                    throw new CodeQLExeNotFoundException("CodeQL not installed or not part of PATH");
+                    return string.Empty;
                 }
 
                 if (proc.ExitCode != 0)
                 {
-                    throw new CodeQLExeNotFoundException("CodeQL not installed or not part of PATH");
+                    return string.Empty;
                 }
 
                 // output should be the extractor location for cpp, need the exe location one directory up
                 string[] outputParts = output.Split(Path.PathSeparator);
                 string path = string.Join(Path.PathSeparator.ToString(), outputParts.Take(outputParts.Length - 1)) + "codeql.exe";
 
-                return !System.IO.File.Exists(path) ? throw new CodeQLExeNotFoundException("CodeQL not installed or not part of PATH") : path;
+                return !System.IO.File.Exists(path) ? string.Empty : path;
             }
         }
 

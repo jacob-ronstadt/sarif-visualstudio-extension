@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
+using Microsoft.Sarif.Viewer.Views;
 
 namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 {
@@ -150,6 +151,15 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         /// <param name="e">Event args.</param>
         private async System.Threading.Tasks.Task MenuItemCallbackAsync(object sender, EventArgs e)
         {
+            if (!CodeQLService.Instance.CodeQLIsInstalled())
+            {
+                await ((AsyncPackage)this.package).JoinableTaskFactory.RunAsync(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                    codeQLInstallHelper.ShowDialog();
+                });
+            }
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             var menuCommand = (OleMenuCommand)sender;

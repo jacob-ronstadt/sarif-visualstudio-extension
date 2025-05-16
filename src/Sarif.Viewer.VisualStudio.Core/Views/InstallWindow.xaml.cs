@@ -3,7 +3,7 @@
 
 using System.Windows;
 
-namespace Microsoft.SdvMenuCommand
+namespace Microsoft.Sarif.Viewer.Views
 {
     /// <summary>
     /// Interaction logic for InstallWindow.xaml.

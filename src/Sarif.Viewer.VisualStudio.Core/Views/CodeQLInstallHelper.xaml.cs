@@ -7,7 +7,9 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Microsoft.SdvMenuCommand
+using Microsoft.VisualStudio.PlatformUI;
+
+namespace Microsoft.Sarif.Viewer.Views
 {
     /// <summary>
     /// Interaction logic for CodeQLInstallHelper.xaml.
