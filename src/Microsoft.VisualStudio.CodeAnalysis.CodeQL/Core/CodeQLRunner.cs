@@ -58,32 +58,32 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <summary>
         /// Directory for analysis output.
         /// </summary>
-        private string analysisDir;
+        private readonly string analysisDir;
 
         /// <summary>
         /// Target platform (e.g., x64).
         /// </summary>
-        private string platform;
+        private readonly string platform;
 
         /// <summary>
         /// 
         /// </summary>
-        private string sourceDir;
+        private readonly string sourceDir;
 
         /// <summary>
         /// Optional output windows pane
         /// </summary>
-        private Func<string,string, Task> outputFunc;
+        private readonly Func<string,string, Task> outputFunc;
 
         /// <summary>
         /// cmd command for build environment setup
         /// </summary>
-        private string buildEnv;
+        private readonly string buildEnv;
 
         /// <summary>
-        ///
+        /// Path to the CodeQL executable.
         /// </summary>
-        private static string CodeQLExe;
+        private static readonly string CodeQLExe;
 
         /// <summary>
         ///
@@ -223,7 +223,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             List<string> queries = new List<string>();
             // make async
             List<Task> tasks = new List<Task>();
-            foreach (var pack in qlpacks)
+            foreach (string pack in qlpacks)
             {
                 tasks.Add(Task.Run(async () => queries.AddRange(await FindQueriesAsync(pack, queriesNSuites))));
             }
@@ -320,7 +320,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <exception cref="CodeQLExeNotFoundException"></exception>
         private static string GetInstalLocation()
         {
-            if (File.Exists(defaultCodeQLPath))
+            if (System.IO.File.Exists(defaultCodeQLPath))
             {
                 return defaultCodeQLPath;
             }
@@ -355,7 +355,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 string[] outputParts = output.Split(Path.PathSeparator);
                 string path = string.Join(Path.PathSeparator.ToString(), outputParts.Take(outputParts.Length - 1)) + "codeql.exe";
 
-                if (!File.Exists(path))
+                if (!System.IO.File.Exists(path))
                 {
                     throw new CodeQLExeNotFoundException("CodeQL not installed or not part of PATH");
                 }
@@ -364,9 +364,8 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
 
         }
 
-
         /// <summary>
-        /// 
+        /// Creates a new instance of the CodeQLRunner class. 
         /// </summary>
         /// <param name="arch"></param>
         /// <param name="sourceDir"></param>
@@ -673,7 +672,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 }
                 else
                 {
-                    var lastLine = File.ReadLines(Path.Combine(dbPath, "codeql-database.yml")).Last();
+                    var lastLine = System.IO.File.ReadLines(Path.Combine(dbPath, "codeql-database.yml")).Last();
                     if (!lastLine.Contains("true"))
                     {
                         throw new DatabaseNotFinalizedException("CodeQL database error");
@@ -689,7 +688,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 string suiteFile;
                 if(!packQuerySuites.TryGetValue(querySet, out suiteFile))
                 {
-                    if(!File.Exists(querySet))
+                    if(!System.IO.File.Exists(querySet))
                     {
                         throw new ArgumentException("Invalid query suite name: " + querySet);
                     }

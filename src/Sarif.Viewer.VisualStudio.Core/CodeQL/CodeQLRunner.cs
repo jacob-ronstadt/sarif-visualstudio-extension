@@ -1,22 +1,15 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
-using System.Net;
 using System.Net.Http;
-using System.Reflection;
-using System.Runtime;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
 
@@ -24,91 +17,90 @@ using static System.Net.WebRequestMethods;
 
 namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
 {
-
     /// <summary>
     /// The CodeQLRunner class is responsible for running CodeQL commands and managing the analysis process.
     /// </summary>
     public sealed class CodeQLRunner
     {
         /// <summary>
-        /// 
+        /// TaskCompletionSource for process exit event. 
         /// </summary>
         public TaskCompletionSource<bool> eventHandled;
 
         /// <summary>
-        /// Exit code of last process to finish
+        /// Exit code of last process to finish.
         /// </summary>
         public int LastExitCode = 0;
 
         /// <summary>
-        /// Path to most recently created Database
+        /// Path to most recently created Database.
         /// </summary>
         public string DatabasePath = string.Empty;
 
         /// <summary>
-        /// Where the databases will be placed
+        /// Gets or sets where the databases will be placed.
         /// </summary>
         public string DatabaseDirectory { get; set; }
 
         /// <summary>
-        /// Where codeql will be installed
+        /// Gets or sets where codeql will be installed.
         /// </summary>
         public string InstallDirectory { get; set; }
 
         /// <summary>
         /// Directory for analysis output.
         /// </summary>
-        private string analysisDir;
+        private readonly string analysisDir;
 
         /// <summary>
         /// Target platform (e.g., x64).
         /// </summary>
-        private string platform;
+        private readonly string platform;
 
         /// <summary>
-        /// 
+        /// Source directory for the project.
         /// </summary>
-        private string sourceDir;
+        private readonly string sourceDir;
 
         /// <summary>
-        /// Optional output windows pane
+        /// Optional output windows pane.
         /// </summary>
-        private Func<string,string, Task> outputFunc;
+        private readonly Func<string, string, Task> outputFunc;
 
         /// <summary>
-        /// cmd command for build environment setup
+        /// cmd command for build environment setup.
         /// </summary>
-        private string buildEnv;
+        private readonly string buildEnv;
 
         /// <summary>
-        ///
+        /// TaskCompletionSource for process exit event.
         /// </summary>
-        private static string CodeQLExe;
+        private static string codeQLExe;
 
         /// <summary>
-        ///
+        /// List of required CodeQL packs to install.
         /// </summary>
         public static readonly Dictionary<string, string> requiredPacks = new Dictionary<string, string>()
         {
-            {"microsoft/windows-drivers", "1.5.0-beta+5" },
-            {"microsoft/cpp-queries", "0.0.2" },
-            {"codeql/cpp-all", "4.0.0" }
+            { "microsoft/windows-drivers", "1.5.0-beta+5" },
+            { "microsoft/cpp-queries", "0.0.2" },
+            { "codeql/cpp-all", "4.0.0" },
         };
 
         /// <summary>
-        ///
+        /// List of CodeQL packs to install.
         /// </summary>
         public static readonly Dictionary<string, string> packQuerySuites = new Dictionary<string, string>()
         {
-            {"mustfix", "microsoft/windows-drivers@1.5.0-beta+5:windows-driver-suites/mustfix.qls"},
-            {"recommended", "microsoft/windows-drivers@1.5.0-beta+5:windows-driver-suites/recommended.qls"},
-            {"mustrun", "microsoft/windows-drivers@1.5.0-beta+5:windows-driver-suites/recommended.qls"}
+            { "mustfix", "microsoft/windows-drivers@1.5.0-beta+5:windows-driver-suites/mustfix.qls" },
+            { "recommended", "microsoft/windows-drivers@1.5.0-beta+5:windows-driver-suites/recommended.qls" },
+            { "mustrun", "microsoft/windows-drivers@1.5.0-beta+5:windows-driver-suites/recommended.qls" },
         };
 
         /// <summary>
-        /// 
+        /// Default path to CodeQL executable.
         /// </summary>
-        private readonly static string defaultCodeQLPath = "C:\\codeql-home\\codeql\\codeql.exe";
+        private static readonly string defaultCodeQLPath = "C:\\codeql-home\\codeql\\codeql.exe";
 
         public static async Task<string> GetLatestVersionAsync()
         {
@@ -116,7 +108,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             {
                 string url = "https://github.com/github/codeql-cli-binaries/releases/latest";
                 HttpResponseMessage response = await client.GetAsync(url);
-                response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
                 using (Stream stream = await response.Content.ReadAsStreamAsync())
                 {
                     using (var reader = new StreamReader(stream))
@@ -126,21 +118,22 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                         {
                             if (line.Contains("<title>") && line.Contains("Release"))
                             {
-                                string version = Regex.Replace(line, "[^0-9`.]+", "", RegexOptions.IgnoreCase);
+                                string version = Regex.Replace(line, "[^0-9`.]+", string.Empty, RegexOptions.IgnoreCase);
                                 return version;
                             }
                         }
                     }
                 }
+
                 return string.Empty;
             }
         }
 
         /// <summary>
-        /// 
+        /// Quickly installs the required CodeQL packs.
         /// </summary>
-        /// <returns></returns>
-        /// <exception cref="CodeQLPacksNotFoundException"></exception>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="CodeQLPacksNotFoundException">Thrown if required CodeQL packs cannot be installed.</exception>
         public static async Task InstallRequiredPacksAsync()
         {
             foreach (KeyValuePair<string, string> pack in requiredPacks)
@@ -156,16 +149,15 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
         }
 
-
         /// <summary>
-        /// 
+        /// Installs a CodeQL pack asynchronously.
         /// </summary>
-        /// <param name="pack"></param>
-        /// <param name="version"></param>
-        /// <returns></returns>
+        /// <param name="pack">The CodeQL pack to install.</param>
+        /// <param name="version">The version of the CodeQL pack to install.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task InstallPackAsync(string pack, string version)
         {
-            string codeqlPath = GetInstalLocation();
+            _ = GetInstalLocation();
             string output = await RunCodeQLProcAsync("pack download " + pack + "@" + version + " --allow-prerelease --force -v");
             foreach (string line in output.Split(
                                new string[] { "\r\n", "\r", "\n" },
@@ -173,27 +165,28 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             {
                 if (line.Contains("Unzipping package to"))
                 {
-                    string path = line.Replace("Unzipping package to ", "").Replace("'", "").Trim();
-                    await RunCodeQLProcAsync("pack ci " + path);
+                    string path = line.Replace("Unzipping package to ", string.Empty).Replace("'", string.Empty).Trim();
+                    _ = await RunCodeQLProcAsync("pack ci " + path);
                 }
             }
         }
 
         /// <summary>
-        /// 
+        /// Runs a CodeQL command asynchronously.
         /// </summary>
-        /// <param name="cmd"></param>
-        /// <param name="workingDir"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <param name="cmd">The command to run.</param>
+        /// <param name="workingDir">The working directory for the command.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if process fails.</exception>
         public static async Task<string> RunCodeQLProcAsync(string cmd, string workingDir = null)
         {
-            if (CodeQLExe == string.Empty)
+            if (codeQLExe == string.Empty)
             {
-                CodeQLExe = GetInstalLocation();
+                codeQLExe = GetInstalLocation();
             }
-            System.Diagnostics.Process proc = new System.Diagnostics.Process();
-            proc.StartInfo.FileName = CodeQLExe;
+
+            var proc = new System.Diagnostics.Process();
+            proc.StartInfo.FileName = codeQLExe;
             proc.StartInfo.Arguments = cmd;
             proc.StartInfo.RedirectStandardOutput = true;
             proc.StartInfo.RedirectStandardError = true;
@@ -204,129 +197,123 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 proc.StartInfo.WorkingDirectory = workingDir;
             }
 
-            proc.Start();
+            _ = proc.Start();
             string output = await proc.StandardOutput.ReadToEndAsync();
             proc.WaitForExit();
-            if (proc.ExitCode != 0)
-            {
-                throw new InvalidOperationException("Process error: " + proc.ExitCode + " " + cmd + " " + output);
-            }
-            return output;
+            return proc.ExitCode != 0
+                ? throw new InvalidOperationException("Process error: " + proc.ExitCode + " " + cmd + " " + output)
+                : output;
         }
+
         /// <summary>
-        /// 
+        /// Finds all queries in a list of CodeQL packs.
         /// </summary>
-        /// <param name="qlpacks"></param>
-        /// <returns></returns>
+        /// <param name="qlpacks">The list of CodeQL packs to search.</param>
+        /// <param name="queriesNSuites">If true, searches for queries. If false, searches for suites.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task<List<string>> FindQueriesAsync(List<string> qlpacks, bool queriesNSuites = true)
         {
-            List<string> queries = new List<string>();
+            var queries = new List<string>();
+
             // make async
-            List<Task> tasks = new List<Task>();
-            foreach (var pack in qlpacks)
+            var tasks = new List<Task>();
+            foreach (string pack in qlpacks)
             {
                 tasks.Add(Task.Run(async () => queries.AddRange(await FindQueriesAsync(pack, queriesNSuites))));
             }
+
             await Task.WhenAll(tasks);
             return queries;
         }
 
         /// <summary>
-        /// 
+        /// Finds all queries in a CodeQL pack.
         /// </summary>
-        /// <param name="qlpack"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <param name="qlpack">The CodeQL pack to search.</param>
+        /// <param name="queriesNSuites">If true, searches for queries. If false, searches for suites.</param>"
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task<List<string>> FindQueriesAsync(string qlpack, bool queriesNSuites = true)
         {
-          
             string output = await RunCodeQLProcAsync("pack packlist " + qlpack + " --format=json");
-            List<string> queries = new List<string>();
+            var queries = new List<string>();
             foreach (string line in output.Split(
                                     new string[] { "\r\n", "\r", "\n" },
-                                    StringSplitOptions.None
-                               ))
+                                    StringSplitOptions.None))
             {
-                string ext;
-                if (!queriesNSuites)
+                string ext = !queriesNSuites ? ".qls" : ".ql";
+                if (line.Trim().Trim(new char[] { ',', '\"' }).Trim().EndsWith(ext))
                 {
-                    ext = ".qls";
-                }
-                else
-                {
-                    ext = ".ql";
-                }
-                if (line.Trim().Trim(new char[] { ',', '\"'}).Trim().EndsWith(ext))
-                {
-                    string query = line.Replace("\"", "").Replace("\\\\", "/").Replace("\\", "/").Trim(',').Trim();
+                    string query = line.Replace("\"", string.Empty).Replace("\\\\", "/").Replace("\\", "/").Trim(',').Trim();
                     queries.Add(query);
                 }
-
             }
+
             return queries; // TODO do this with json
         }
 
         /// <summary>
         /// Finds all CodeQL packs installed on the system.
         /// </summary>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the process fails.</exception>
         public static async Task<List<string>> FindPacksAsync()
         {
             string output = await RunCodeQLProcAsync("resolve packs --show-hidden-packs --format=json");
-            List<string> packs = new List<string>();
+            var packs = new List<string>();
             foreach (string line in output.Split(
                                     new string[] { "\r\n", "\r", "\n" },
-                                    StringSplitOptions.None
-                               ))
+                                    StringSplitOptions.None))
             {
                 if (line.Contains("legacy-upgrades"))
                 {
                     continue;
                 }
+
                 if (line.Contains("\"path\"") && line.Contains("qlpack.yml"))
                 {
-                    packs.Add(line.Replace("\"path\" : ", "").Replace("\"", "").Replace("\\\\", "/").Replace("\\", "/").Trim());
+                    packs.Add(line.Replace("\"path\" : ", string.Empty).Replace("\"", string.Empty).Replace("\\\\", "/").Replace("\\", "/").Trim());
                 }
             }
+
             return packs; // TODO do this with json
         }
 
         /// <summary>
-        /// 
+        /// Finds all missing CodeQL packs.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public static async Task<List<string>> FindMissingPacksAsync()
         {
             List<string> packList = await FindPacksAsync();
-            List<string> missingPacks = requiredPacks.Keys.ToList();
+            var missingPacks = requiredPacks.Keys.ToList();
             foreach (string packPath in packList)
             {
                 foreach (KeyValuePair<string, string> reqPack in requiredPacks)
                 {
                     if (packPath.Contains(reqPack.Key) && packPath.Contains(reqPack.Value))
                     {
-                        missingPacks.Remove(reqPack.Key);
+                        _ = missingPacks.Remove(reqPack.Key);
                     }
                 }
             }
+
             return missingPacks;
         }
 
         /// <summary>
-        /// 
+        /// Gets the installation location of CodeQL.
         /// </summary>
-        /// <returns></returns>
-        /// <exception cref="CodeQLExeNotFoundException"></exception>
+        /// <returns>The installation path of CodeQL.</returns>
+        /// <exception cref="CodeQLExeNotFoundException">Thrown when CodeQL is not found.</exception>
         private static string GetInstalLocation()
         {
-            if (File.Exists(defaultCodeQLPath))
+            if (System.IO.File.Exists(defaultCodeQLPath))
             {
                 return defaultCodeQLPath;
             }
             else
             {
-                System.Diagnostics.Process proc = new System.Diagnostics.Process();
+                var proc = new System.Diagnostics.Process();
 
                 proc.StartInfo.FileName = "cmd.exe";
                 proc.StartInfo.Arguments = "/C " + "codeql resolve extractor --language=cpp";
@@ -335,81 +322,73 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 proc.StartInfo.UseShellExecute = false;
                 proc.StartInfo.CreateNoWindow = true;
 
-                proc.Start();
-                string output = "";
+                _ = proc.Start();
+                string output = string.Empty;
                 while (!proc.StandardOutput.EndOfStream)
                 {
-                    output = proc.StandardOutput.ReadLine() ?? "";
+                    output = proc.StandardOutput.ReadLine() ?? string.Empty;
                 }
+
                 proc.WaitForExit();
 
                 if (output == null || string.IsNullOrEmpty(output))
                 {
                     throw new CodeQLExeNotFoundException("CodeQL not installed or not part of PATH");
                 }
+
                 if (proc.ExitCode != 0)
                 {
                     throw new CodeQLExeNotFoundException("CodeQL not installed or not part of PATH");
                 }
+
                 // output should be the extractor location for cpp, need the exe location one directory up
                 string[] outputParts = output.Split(Path.PathSeparator);
                 string path = string.Join(Path.PathSeparator.ToString(), outputParts.Take(outputParts.Length - 1)) + "codeql.exe";
 
-                if (!File.Exists(path))
-                {
-                    throw new CodeQLExeNotFoundException("CodeQL not installed or not part of PATH");
-                }
-                return path;
+                return !System.IO.File.Exists(path) ? throw new CodeQLExeNotFoundException("CodeQL not installed or not part of PATH") : path;
             }
-
         }
 
-
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="CodeQLRunner"/> class.
         /// </summary>
-        /// <param name="arch"></param>
-        /// <param name="sourceDir"></param>
-        /// <param name="owp"></param>
-        /// <param name="buildEnv"></param>
-        /// <param name="dbDir"></param>
-        public CodeQLRunner(string arch, string sourceDir, Func<string,string, Task> owp = null, string buildEnv = "", string dbDir = "")
+        /// <param name="arch">The architecture.</param>
+        /// <param name="sourceDir">The source directory.</param>
+        /// <param name="owp">The output function.</param>
+        /// <param name="buildEnv">The build environment.</param>
+        /// <param name="dbDir">The database directory.</param>
+        public CodeQLRunner(string arch, string sourceDir, Func<string, string, Task> owp = null, string buildEnv = "", string dbDir = "")
         {
             outputFunc = owp;
             platform = arch;
             this.sourceDir = sourceDir;
             this.buildEnv = buildEnv;
-            if(dbDir != string.Empty)
-            {
-                analysisDir = dbDir;
-            }
-            else
-            {
-                analysisDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "codeql_databases", sourceDir.GetHashCode().ToString());
-            }
+            analysisDir = dbDir != string.Empty
+                ? dbDir
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "codeql_databases", sourceDir.GetHashCode().ToString());
             if (!Directory.Exists(analysisDir))
             {
-                Directory.CreateDirectory(analysisDir);
+                _ = Directory.CreateDirectory(analysisDir);
             }
 
-            CodeQLExe = GetInstalLocation();
+            codeQLExe = GetInstalLocation();
         }
 
         /// <summary>
-        /// 
+        /// Handles the process exit event.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void processExited(object sender, System.EventArgs e)
+        /// <param name="sender"> sender.</param>
+        /// <param name="e">EventArgs.</param>
+        private void ProcessExited(object sender, System.EventArgs e)
         {
-            eventHandled.TrySetResult(true);
+            _ = eventHandled.TrySetResult(true);
         }
 
         /// <summary>
-        /// 
+        /// Counts the number of lines of source code in the database.
         /// </summary>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="Exception"> Exception </exception>
         public async Task<int> CountDBSourceCodeLinesAsync()
         {
             string output = await RunCodeQLProcAsync("database print-baseline codeql_db", workingDir: analysisDir);
@@ -417,48 +396,54 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             {
                 if (line.EndsWith("cpp."))
                 {
-                    int lines = int.Parse(line.Replace("Counted a baseline of", "").Replace("lines of code for cpp.", "").Trim());
+                    int lines = int.Parse(line.Replace("Counted a baseline of", string.Empty).Replace("lines of code for cpp.", string.Empty).Trim());
                     return lines;
                 }
+
                 // TODO other languages
             }
+
             throw new Exception("Database not found or no source code found");
         }
 
-
         /// <summary>
-        /// 
+        /// Adds diagnostic information to the database.
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="sourceId"></param>
-        /// <returns></returns>
+        /// <param name="message"> Diagnostic info to add to database. </param>
+        /// <param name="sourceId"> SourceID to use. </param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task AddDBDiagInfoAsync(string message, int sourceId)
         {
-            string output = await RunCodeQLProcAsync("database add-diagnostic --plaintext-message=\"" +message + "\" --source-id="+ sourceId.ToString() + " --source-name=CodeqlVSExt", workingDir: analysisDir);
+            _ = await RunCodeQLProcAsync("database add-diagnostic --plaintext-message=\"" + message + "\" --source-id=" + sourceId.ToString() + " --source-name=CodeqlVSExt", workingDir: analysisDir);
         }
 
         /// <summary>
-        /// 
+        /// Generates a CodeQL database diagnostics report.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<string> GetDBDiagAsync()
         {
             return await RunCodeQLProcAsync("database export-diagnostics .\\codeql_db\\ --format=raw", workingDir: analysisDir);
         }
 
         /// <summary>
-        ///
+        /// Runs a command in a new cmd process.
         /// </summary>
+        /// <param name="strCmdText">The command to run.</param>
+        /// <param name="proccessExitedFunc">Callback function to handle process exit events.</param>
+        /// <param name="ct">Cancellation token to cancel the operation.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task RunCMDProcAsync(string strCmdText, Action<object, System.EventArgs> proccessExitedFunc, CancellationToken ct)
         {
-            using(System.Diagnostics.Process codeqlProc = new System.Diagnostics.Process())
+            using (var codeqlProc = new System.Diagnostics.Process())
             using (ct.Register(() =>
             {
-                if(codeqlProc != null)
+                if (codeqlProc != null)
                 {
                     KillProcessAndChildren(codeqlProc.Id);
                 }
-                eventHandled.TrySetCanceled();
+
+                _ = eventHandled.TrySetCanceled();
             }))
             {
                 try
@@ -478,7 +463,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                         {
                             if (!string.IsNullOrEmpty(e.Data))
                             {
-                                _ = outputFunc("CodeQL",e.Data);
+                                _ = outputFunc("CodeQL", e.Data);
                             }
                         };
                         codeqlProc.ErrorDataReceived += (sender, e) =>
@@ -493,10 +478,11 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                     {
                         codeqlProc.StartInfo.RedirectStandardOutput = false;
                     }
+
                     codeqlProc.EnableRaisingEvents = true;
                     codeqlProc.Exited += new EventHandler(proccessExitedFunc);
 
-                    codeqlProc.Start();
+                    _ = codeqlProc.Start();
                     if (outputFunc != null)
                     {
                         codeqlProc.BeginOutputReadLine();
@@ -507,7 +493,8 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 {
                     throw new Exception(ex.ToString());
                 }
-                await Task.WhenAny(eventHandled.Task);
+
+                _ = await Task.WhenAny(eventHandled.Task);
 
                 if (codeqlProc.ExitCode != 0)
                 {
@@ -515,7 +502,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                     {
                         if (outputFunc != null)
                         {
-                            _ = outputFunc("CodeQL","CodeQL process killed");
+                            _ = outputFunc("CodeQL", "CodeQL process killed");
                         }
                     }
                     else
@@ -526,11 +513,10 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
         }
 
-
         /// <summary>
-        /// 
+        /// Kills a process and all its child processes.
         /// </summary>
-        /// <param name="pid"></param>
+        /// <param name="pid">The process ID to kill.</param>
         private void KillProcessAndChildren(int pid)
         {
             // Cannot close 'system idle process'.
@@ -538,16 +524,18 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             {
                 return;
             }
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher
-                    ("Select * From Win32_Process Where ParentProcessID=" + pid);
+
+            var searcher = new ManagementObjectSearcher(
+                    "Select * From Win32_Process Where ParentProcessID=" + pid);
             ManagementObjectCollection moc = searcher.Get();
             foreach (ManagementObject mo in moc)
             {
                 KillProcessAndChildren(Convert.ToInt32(mo["ProcessID"]));
             }
+
             try
             {
-                System.Diagnostics.Process proc = System.Diagnostics.Process.GetProcessById(pid);
+                var proc = System.Diagnostics.Process.GetProcessById(pid);
                 proc.Kill();
             }
             catch (ArgumentException)
@@ -557,26 +545,27 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="suite"></param>
-        /// <returns></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException"></exception>
-        public async Task<List<string>>GetQueriesFromSuiteAsync(string suite)
+        public async Task<List<string>> GetQueriesFromSuiteAsync(string suite)
         {
-            if(packQuerySuites.TryGetValue(suite, out string queryPath))
+            if (packQuerySuites.TryGetValue(suite, out string queryPath))
             {
-                List<string> queries = new List<string>();
-             
+                var queries = new List<string>();
+
                 string output = await RunCodeQLProcAsync("resolve queries " + queryPath);
                 foreach (string line in output.Split(Environment.NewLine.ToCharArray()[0]))
                 {
-                    string query = line.Replace("\"", "").Replace("\\\\", "/").Replace("\\", "/").Trim();
+                    string query = line.Replace("\"", string.Empty).Replace("\\\\", "/").Replace("\\", "/").Trim();
                     if (line.EndsWith(".ql"))
                     {
                         queries.Add(query);
                     }
                 }
+
                 return queries;
             }
             else
@@ -585,11 +574,10 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
         }
 
-
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <exception cref="CodeQLPacksNotFoundException"></exception>
         public async Task CheckCodeQLPacksInstalledAsync()
         {
@@ -600,7 +588,6 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
         }
 
-        
         /// <summary>
         /// Generates a CodeQL database for the specified project file.
         /// </summary>
@@ -608,60 +595,66 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <exception cref="Exception">Thrown if the analysis directory does not exist.</exception>
         public async Task GenerateDatabaseAsync(string buildCommand, CancellationToken ct, Action<object, System.EventArgs> proccessExitedFunc = null)
         {
-            if (ct.IsCancellationRequested )
+            if (ct.IsCancellationRequested)
             {
                 return;
             }
+
             eventHandled = new TaskCompletionSource<bool>();
-         
+
             if (proccessExitedFunc == null)
             {
                 // use default if none provided
-                proccessExitedFunc = processExited;
+                proccessExitedFunc = ProcessExited;
             }
 
             string strCmdText = string.Empty;
-          
+
             try
             {
                 string dbPath = Path.Combine(analysisDir, "codeql_db");
-                
-                string[] procArr = {CodeQLExe, "database",
-                "create","\"" +  dbPath + "\"",
-                "--force-overwrite",
-                "--language=cpp",
-                "--source-root="+"\"" + sourceDir + "\"",
-                "--command="+ "\"" + buildCommand + "\""};
+
+                string[] procArr =
+                {
+                    codeQLExe, "database",
+                    "create", "\"" + dbPath + "\"",
+                    "--force-overwrite",
+                    "--language=cpp",
+                    "--source-root=" + "\"" + sourceDir + "\"",
+                    "--command=" + "\"" + buildCommand + "\"",
+                };
                 strCmdText = string.Join(" ", procArr);
                 if (!string.IsNullOrWhiteSpace(buildEnv))
                 {
-                    strCmdText = buildEnv+ " " + strCmdText;
+                    strCmdText = buildEnv + " " + strCmdText;
                 }
+
                 await RunCMDProcAsync(strCmdText, proccessExitedFunc, ct);
             }
             catch (Exception ex)
             {
                 throw new Exception("Create DB Failed with command: " + strCmdText + " | " + ex.ToString(), ex);
             }
-
         }
 
         /// <summary>
         ///
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<string> RunCodeQLQuerySetAsync(string querySet, CancellationToken ct, Action<object, System.EventArgs> proccessExitedFunc = null)
         {
             if (ct.IsCancellationRequested)
             {
                 return null;
             }
+
             eventHandled = new TaskCompletionSource<bool>();
-           
+
             string strCmdText = string.Empty;
             if (proccessExitedFunc == null)
             {
                 // use default if none provided
-                proccessExitedFunc = processExited;
+                proccessExitedFunc = ProcessExited;
             }
 
             try
@@ -673,43 +666,43 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 }
                 else
                 {
-                    var lastLine = File.ReadLines(Path.Combine(dbPath, "codeql-database.yml")).Last();
+                    string lastLine = System.IO.File.ReadLines(Path.Combine(dbPath, "codeql-database.yml")).Last();
                     if (!lastLine.Contains("true"))
                     {
                         throw new DatabaseNotFinalizedException("CodeQL database error");
                     }
                 }
+
                 string resultsDir = Path.Combine(sourceDir, ".sarif");
-                if(!Directory.Exists(resultsDir))
+                if (!Directory.Exists(resultsDir))
                 {
-                    Directory.CreateDirectory(resultsDir);
+                    _ = Directory.CreateDirectory(resultsDir);
                 }
+
                 string resultsPath = Path.Combine(resultsDir, "results.sarif");
 
                 string suiteFile;
-                if(!packQuerySuites.TryGetValue(querySet, out suiteFile))
+                if (!packQuerySuites.TryGetValue(querySet, out suiteFile))
                 {
-                    if(!File.Exists(querySet))
-                    {
-                        throw new ArgumentException("Invalid query suite name: " + querySet);
-                    }
-                    else
-                    {
-                        suiteFile = querySet;
-                    }
+                    suiteFile = !System.IO.File.Exists(querySet) ? throw new ArgumentException("Invalid query suite name: " + querySet) : querySet;
                 }
-                string[] procArr = {CodeQLExe,"database",
-                    "analyze","\"" +  dbPath + "\"",
+
+                string[] procArr =
+                {
+                    codeQLExe, "database",
+                    "analyze", "\"" + dbPath + "\"",
                     "-v",
                     "--format=sarifv2.1.0",
-                    "--output="+"\"" + resultsPath + "\"",
-                    suiteFile}; 
+                    "--output=" + "\"" + resultsPath + "\"",
+                    suiteFile,
+                };
 
                 strCmdText = string.Join(" ", procArr);
                 if (!string.IsNullOrWhiteSpace(buildEnv))
                 {
                     strCmdText = buildEnv + " " + strCmdText;
                 }
+
                 await RunCMDProcAsync(strCmdText, proccessExitedFunc, ct);
                 return resultsPath;
             }

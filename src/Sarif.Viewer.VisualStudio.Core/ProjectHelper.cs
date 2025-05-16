@@ -3,22 +3,16 @@
 
 using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
 using EnvDTE;
 
 using EnvDTE80;
 
-using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Setup.Configuration;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Threading;
-using Microsoft.VisualStudio.VCProjectEngine;
 
 namespace Microsoft.Sarif.Viewer
 {
@@ -288,4 +282,5 @@ namespace Microsoft.Sarif.Viewer
             return null;
         }
 
+    }
 }

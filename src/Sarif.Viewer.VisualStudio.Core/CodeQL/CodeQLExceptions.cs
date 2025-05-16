@@ -2,10 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+
+using Microsoft.VisualStudio.Shell;
 
 namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions
 {
@@ -15,10 +14,12 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions
         public CodeQLAlreadyRunningException()
         {
         }
+
         public CodeQLAlreadyRunningException(string message)
             : base(message)
         {
         }
+
         public CodeQLAlreadyRunningException(string message, Exception inner)
             : base(message, inner)
         {
@@ -92,71 +93,6 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions
     public class CodeQLExceptionHandler
     {
 
-        private async Task ExceptionHandlerAsync(Exception exception)
-        {
-            int result;
-            string resourceString;
-
-
-          
-            if (exception.GetType() == typeof(CodeQLPacksNotFoundException))
-            {
-                await JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    CodeQLPackInstallHelper codeQLpackInstallHelper = new CodeQLPackInstallHelper();
-                    await codeQLpackInstallHelper.UpdateMissingPackBoxesAsync();
-                    codeQLpackInstallHelper.ShowDialog();
-                });
-                return;
-            }
-            else if (exception.GetType() == typeof(CodeQLExeNotFoundException))
-            {
-                await JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                    codeQLInstallHelper.ShowDialog();
-                });
-                return;
-            }
-            else if (exception.GetType() == typeof(DatabaseNotFinalizedException))
-            {
-                resourceString = getStringFromResources("codeqlNoDatabase");
-            }
-            else if (exception.GetType() == typeof(MissingSarifViewerException))
-            {
-                resourceString = getStringFromResources("missingSarifViewer");
-            }
-            else if (exception.GetType() == typeof(CodeQLAlreadyRunningException))
-            {
-                resourceString = getStringFromResources("codeqlAlreadyRunning");
-            }
-            else
-            {
-                resourceString = getStringFromResources("codeqlException");
-            }
-
-            await JoinableTaskFactory.RunAsync(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                // End Debug
-                IVsUIShell uiShell = (IVsUIShell)await GetServiceAsync(typeof(SVsUIShell));
-                Guid clsid = Guid.Empty;
-                Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(uiShell.ShowMessageBox(
-                        0,
-                        ref clsid,
-                        resourceString,
-                        string.Format(CultureInfo.CurrentCulture, "{0}.", exception.Message),
-                        string.Empty,
-                        0,
-                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST,
-                        OLEMSGICON.OLEMSGICON_INFO,
-                        0,        // false
-                        out result));
-            });
-        }
+      
     }
 }

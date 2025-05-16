@@ -3,31 +3,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel.Design;
-using System.Globalization;
-using System.Linq;
-using System.Management.Instrumentation;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using EnvDTE;
-using EnvDTE80;
+
 using Microsoft;
-using Microsoft.CodeAnalysis.Sarif;
-using Microsoft.Sarif.Viewer;
-using Microsoft.Sarif.Viewer.Controls;
-using Microsoft.Sarif.Viewer.ErrorList;
-using Microsoft.Sarif.Viewer.Models;
-using Microsoft.Sarif.Viewer.ResultSources.Domain.Models;
-using Microsoft.Sarif.Viewer.Sarif;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
-using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Threading;
 
 namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 {
@@ -36,17 +17,17 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         /// <summary>
         /// Command ID for CodeQL analyze.
         /// </summary>
-        public const int CodeQLAnalyzeCommandId = 0x100;
+        public const int CodeQLAnalyzeCommandId = 0x0100;
 
         /// <summary>
         /// Command ID for CodeQL kill process.
         /// </summary>
-        public const int CodeQLStopCommandId = 0x110;
+        public const int CodeQLStopCommandId = 0x0110;
 
         /// <summary>
         /// Command ID for CodeQL load queries.
         /// </summary>
-        public const int CodeQLLoadQueriesCommandId = 0x111;
+        public const int CodeQLLoadQueriesCommandId = 0x0111;
 
         /// <summary>
         /// Command ID for CodeQL database create.
@@ -73,13 +54,9 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         /// </summary>
         private readonly Package package;
 
-        /// <summary>
-        /// Service for accessing menu commands.
-        /// </summary>
-        private readonly IMenuCommandService menuCommandService;
-
         private static string _currentDropDownComboChoice;
-        private static HashSet<string> _dropDownComboChoicesDiscoveredSet;
+
+        private static readonly HashSet<string> _dropDownComboChoicesDiscoveredSet = new HashSet<string>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeQLCommand"/> class.
@@ -89,44 +66,49 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         private CodeQLCommand(Package package)
         {
             this.package = package ?? throw new ArgumentNullException(nameof(package));
-
-            this.menuCommandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
-            Assumes.Present(this.menuCommandService);
-
-            if (menuCommandService != null)
+            var commandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
+            if (commandService != null)
             {
                 var oleCommand = new OleMenuCommand(
                       this.MenuItemCallback,
-                      new CommandID(CommandSet, CodeQLAnalyzeCommandId));
-                oleCommand.ParametersDescription = "$";
-                menuCommandService.AddCommand(oleCommand);
+                      new CommandID(CommandSet, CodeQLAnalyzeCommandId))
+                {
+                    ParametersDescription = "$"
+                };
+                commandService.AddCommand(oleCommand);
 
                 oleCommand = new OleMenuCommand(
                     this.MenuItemCallback,
-                    new CommandID(CommandSet, CodeQLStopCommandId));
-                oleCommand.ParametersDescription = "$";
-                menuCommandService.AddCommand(oleCommand);
+                    new CommandID(CommandSet, CodeQLStopCommandId))
+                {
+                    ParametersDescription = "$"
+                };
+                commandService.AddCommand(oleCommand);
 
                 oleCommand = new OleMenuCommand(
                     this.MenuItemCallback,
-                    new CommandID(CommandSet, CodeQLDatabaseCommandId));
-                oleCommand.ParametersDescription = "$";
-                menuCommandService.AddCommand(oleCommand);
+                    new CommandID(CommandSet, CodeQLDatabaseCommandId))
+                {
+                    ParametersDescription = "$"
+                };
+                commandService.AddCommand(oleCommand);
 
                 oleCommand = new OleMenuCommand(
                     this.MenuItemCallback,
-                    new CommandID(CommandSet, CodeQLLoadQueriesCommandId));
-                oleCommand.ParametersDescription = "$";
-                menuCommandService.AddCommand(oleCommand);
+                    new CommandID(CommandSet, CodeQLLoadQueriesCommandId))
+                {
+                    ParametersDescription = "$"
+                };
+                commandService.AddCommand(oleCommand);
 
                 // Combo box
-                CommandID menuMyDropDownComboCommandID = new CommandID(CommandSet, CodeQLComboId);
-                OleMenuCommand menuMyDropDownComboCommand = new OleMenuCommand(new EventHandler(OnMenuMyDropDownCombo), menuMyDropDownComboCommandID);
-                menuCommandService.AddCommand(menuMyDropDownComboCommand);
+                var menuMyDropDownComboCommandID = new CommandID(CommandSet, CodeQLComboId);
+                var menuMyDropDownComboCommand = new OleMenuCommand(new EventHandler(OnMenuMyDropDownCombo), menuMyDropDownComboCommandID);
+                commandService.AddCommand(menuMyDropDownComboCommand);
 
-                CommandID menuMyDropDownComboGetListCommandID = new CommandID(CommandSet, ComboGetListId);
+                var menuMyDropDownComboGetListCommandID = new CommandID(CommandSet, ComboGetListId);
                 MenuCommand menuMyDropDownComboGetListCommand = new OleMenuCommand(new EventHandler(OnMenuMyDropDownComboGetList), menuMyDropDownComboGetListCommandID);
-                menuCommandService.AddCommand(menuMyDropDownComboGetListCommand);
+                commandService.AddCommand(menuMyDropDownComboGetListCommand);
             }
         }
 
@@ -155,7 +137,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 
         private void MenuItemCallback(object sender, EventArgs e)
         {
-           _ = ((AsyncPackage)package).JoinableTaskFactory.RunAsync(async () => { await this.MenuItemCallbackAsync(sender, e); });
+            this.MenuItemCallbackAsync(sender, e).FileAndForget("Microsoft/SARIF/Viewer/CodeQL/Failed"); // FIXME
         }
 
         /// <summary>
@@ -170,8 +152,6 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             var menuCommand = (OleMenuCommand)sender;
-            var menuCmdEventArgs = (OleMenuCmdEventArgs)e;
-
             switch (menuCommand.CommandID.ID)
             {
                 case CodeQLAnalyzeCommandId:
@@ -231,7 +211,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                         }
 
                         CodeQLService.Init();
-                        await CodeQLService.CodeQLGenerateDatabaseAsync();
+                        _ = await CodeQLService.CodeQLGenerateDatabaseAsync();
                         CodeQLService.Clear();
                     }
                     catch (Exception ex)
@@ -253,10 +233,8 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 
         private void OnMenuMyDropDownCombo(object sender, EventArgs e)
         {
-            OleMenuCmdEventArgs eventArgs = e as OleMenuCmdEventArgs;
-            if (eventArgs != null)
+            if (e is OleMenuCmdEventArgs eventArgs)
             {
-                string newChoice = eventArgs.InValue as string;
                 IntPtr vOut = eventArgs.OutValue;
 
                 if (vOut != IntPtr.Zero)
@@ -264,13 +242,9 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                     // when vOut is non-NULL, the IDE is requesting the current value for the combo
                     Marshal.GetNativeVariantForObject(_currentDropDownComboChoice, vOut);
                 }
-                else if (newChoice != null)
-                {
-                    _currentDropDownComboChoice = newChoice;
-                }
                 else
                 {
-                    throw new ArgumentException("Invalid Selection");
+                    _currentDropDownComboChoice = eventArgs.InValue is string newChoice ? newChoice : throw new ArgumentException("Invalid Selection");
                 }
             }
             else
@@ -282,9 +256,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 
         private void OnMenuMyDropDownComboGetList(object sender, EventArgs e)
         {
-            OleMenuCmdEventArgs eventArgs = e as OleMenuCmdEventArgs;
-
-            if (eventArgs != null)
+            if (e is OleMenuCmdEventArgs eventArgs)
             {
                 object inParam = eventArgs.InValue;
                 IntPtr vOut = eventArgs.OutValue;
@@ -308,33 +280,9 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             }
         }
 
-
-        private async void CodeQLLoadAvailableQueries(object sender, EventArgs e)
-        {
-            try
-            {
-                await JoinableTaskFactory.RunAsync(async () =>
+        /*        private async void CodeQLLoadAvailableAsync(object sender, EventArgs e)
                 {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    //InstallWindow iw = new InstallWindow();
-                    //iw.DataContext = this;
-                    //iw.Show();
-                    var packList = await CodeQLRunner.FindPacksAsync();
-                    var queryList = await CodeQLRunner.FindQueriesAsync(packList, queriesNSuites: false);
-                    _dropDownComboChoicesDiscoveredSet.UnionWith(queryList);
-                    _dropDownComboChoices = _dropDownComboChoicesDefaultSet.Concat(_dropDownComboChoicesDiscoveredSet).ToArray();
-                    iw.Close();
-                    MessageBox.Show(_dropDownComboChoices.Length.ToString() + " available queries found.");
-
-                });
-            }
-            catch (Exception ex)
-            {
-                await ExceptionHandlerAsync(ex);
-            }
-        }
-
-
-
+                    await System.Threading.Tasks.Task.Delay(1000);
+                }*/
     }
 }

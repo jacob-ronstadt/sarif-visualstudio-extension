@@ -194,12 +194,6 @@
       <Link>stylecop.json</Link>
     </AdditionalFiles>
   </ItemGroup>
-  <ItemGroup Label="Common Packages">
-    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="VSPackage.resx">
       <DependentUpon>source.extension.vsixmanifest</DependentUpon>

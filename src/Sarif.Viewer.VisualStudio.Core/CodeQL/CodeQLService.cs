@@ -3,27 +3,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Interop;
+
 using EnvDTE;
-using EnvDTE80;
+
 using Microsoft.Sarif.Viewer;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
+using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
 
 namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 {
@@ -34,7 +23,6 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         /// </summary>
         private static CancellationTokenSource _cancelToken;
         private static TaskCompletionSource<bool> _taskCompleted;
-
 
         public static bool IsCodeQLTaskCompleted()
         {
@@ -68,9 +56,10 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                     {
                         _cancelToken.Cancel();
                     }
+
                     if (!_taskCompleted.Task.IsCompleted)
                     {
-                        _taskCompleted.TrySetCanceled();
+                        _ = _taskCompleted.TrySetCanceled();
                     }
                 }
             }
@@ -78,19 +67,45 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             {
                 throw new Exception(ex.ToString());
             }
-
         }
-
 
         public static async System.Threading.Tasks.Task CodeQLRunQuerySetAsync(string querySet)
         {
             // TODO
-            string visualStudioShellPath = ProjectHelper.GetVisualStudioFolder();
-            Project project = ProjectHelper.GetActiveProject();
-            string projectArch = ProjectHelper.GetProjectPropertyValue(project, "Platform");
-            string projectDirectory = ProjectHelper.GetProjectDirectory(project);
+            try
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                string visualStudioShellPath = ProjectHelper.GetVisualStudioFolder();
+                Project project = ProjectHelper.GetActiveProject();
+                string projectArch = ProjectHelper.GetProjectPropertyValue(project, "Platform");
+                string projectDirectory = ProjectHelper.GetProjectDirectory(project);
 
-            string startCommand = "\"" + Path.Combine(visualStudioShellPath, @"VC\Auxiliary\Build\vcvarsall.bat") + "\" " + projectArch + " && cd /d \"" + projectDirectory + "\" &&";
+                string startCommand = "\"" + Path.Combine(visualStudioShellPath, @"VC\Auxiliary\Build\vcvarsall.bat") + "\" " + projectArch + " && cd /d \"" + projectDirectory + "\" &&";
+
+                CodeQLRunner runner = new CodeQLRunner("arch", "dir", buildEnv: startCommand, dbDir: "dir"); // FIXME
+                // await runner.CheckCodeQLPacksInstalledAsync();
+
+                List<string> queriesList;
+                if (querySet.EndsWith(".qls") || querySet.EndsWith("ql"))
+                {
+                    queriesList = File.Exists(querySet)
+                        ? new List<string>() { querySet }
+                        : throw new ArgumentException("Query file does not exist: " + querySet);
+                }
+                else
+                {
+                    // queriesList = await runner.GetQueriesFromSuiteAsync(querySet);
+                }
+
+                // await SarifViewerUtils.OpenSarifLogAsync(sarifResults);
+
+                _ = _taskCompleted.TrySetResult(true);
+            }
+            catch (Exception ex)
+            {
+                _ = _taskCompleted.TrySetResult(false);
+                throw new Exception(ex.ToString());
+            }
 
             await System.Threading.Tasks.Task.Delay(1000);
         }
@@ -101,6 +116,5 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             await System.Threading.Tasks.Task.Delay(1000);
             return true;
         }
-
     }
 }
