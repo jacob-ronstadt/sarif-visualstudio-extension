@@ -79,9 +79,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\Microsoft.VisualStudio.CodeAnalysis.CodeQL\Resources\Images_32bit.bmp">
-      <Link>Images_32bit.bmp</Link>
-    </Content>
     <Content Include="..\Sarif.Viewer.VisualStudio.Core\icon.png">
       <Link>icon.png</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -199,4 +196,5 @@
       <DesignTime>True</DesignTime>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
 </Project>

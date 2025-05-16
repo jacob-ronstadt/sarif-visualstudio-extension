@@ -4,15 +4,17 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Packaging;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using EnvDTE;
 
 using Microsoft.Sarif.Viewer;
+using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
-using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
 
 namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 {
@@ -23,94 +25,118 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         /// </summary>
         private static CancellationTokenSource _cancelToken;
         private static TaskCompletionSource<bool> _taskCompleted;
+        private static string[] _availableQueries;
+        
+        private static CodeQLService _instance = null;
 
-        public static bool IsCodeQLTaskCompleted()
+        /// <summary>
+        /// Gets the instance of the service.
+        /// </summary>
+        public static CodeQLService Instance
         {
-            return _taskCompleted != null && _taskCompleted.Task.IsCompleted;
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = new CodeQLService();
+                }
+                return _instance;
+            }
+            private set { }
         }
 
-        public static bool IsCodeQLTaskCanceled()
+        private CodeQLService()
         {
-            return _taskCompleted != null && _taskCompleted.Task.IsCanceled;
+            _taskCompleted = null;
+            _cancelToken = null;
+            _availableQueries = null;
         }
 
-        public static void Init()
+        public bool IsCodeQLTaskRunning()
         {
-            _taskCompleted = new TaskCompletionSource<bool>();
-            _cancelToken = new CancellationTokenSource();
+            return _taskCompleted != null && !_taskCompleted.Task.IsCompleted;
         }
 
-        public static void Clear()
+        public bool IsCodeQLTaskCompleted()
+        {
+            return _taskCompleted != null && _taskCompleted.Task.IsCompleted && !_taskCompleted.Task.IsCanceled;
+        }
+
+        public void ClearTask()
         {
             _taskCompleted = null;
             _cancelToken = null;
         }
 
-        public static void CancelIfRunning()
+        public void InitTask()
         {
-            try
-            {
-                if (_taskCompleted != null && _cancelToken != null)
-                {
-                    if (!_cancelToken.IsCancellationRequested)
-                    {
-                        _cancelToken.Cancel();
-                    }
+            _taskCompleted = new TaskCompletionSource<bool>(false);
+            _cancelToken = new CancellationTokenSource();
+        }
 
-                    if (!_taskCompleted.Task.IsCompleted)
-                    {
-                        _ = _taskCompleted.TrySetCanceled();
-                    }
-                }
-            }
-            catch (Exception ex)
+        public void CancelIfRunning()
+        {
+            if (_taskCompleted != null && _cancelToken != null)
             {
-                throw new Exception(ex.ToString());
+                if (!_cancelToken.IsCancellationRequested)
+                {
+                    _cancelToken.Cancel();
+                }
+
+                if (!_taskCompleted.Task.IsCompleted)
+                {
+                    _ = _taskCompleted.TrySetCanceled();
+                }
             }
         }
 
-        public static async System.Threading.Tasks.Task CodeQLRunQuerySetAsync(string querySet)
+        public async Task<string[]> AvailableQueriesAsync()
         {
-            // TODO
-            try
+            if (_availableQueries == null)
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                string visualStudioShellPath = ProjectHelper.GetVisualStudioFolder();
-                Project project = ProjectHelper.GetActiveProject();
-                string projectArch = ProjectHelper.GetProjectPropertyValue(project, "Platform");
-                string projectDirectory = ProjectHelper.GetProjectDirectory(project);
-
-                string startCommand = "\"" + Path.Combine(visualStudioShellPath, @"VC\Auxiliary\Build\vcvarsall.bat") + "\" " + projectArch + " && cd /d \"" + projectDirectory + "\" &&";
-
-                CodeQLRunner runner = new CodeQLRunner("arch", "dir", buildEnv: startCommand, dbDir: "dir"); // FIXME
-                // await runner.CheckCodeQLPacksInstalledAsync();
-
-                List<string> queriesList;
-                if (querySet.EndsWith(".qls") || querySet.EndsWith("ql"))
-                {
-                    queriesList = File.Exists(querySet)
-                        ? new List<string>() { querySet }
-                        : throw new ArgumentException("Query file does not exist: " + querySet);
-                }
-                else
-                {
-                    // queriesList = await runner.GetQueriesFromSuiteAsync(querySet);
-                }
-
-                // await SarifViewerUtils.OpenSarifLogAsync(sarifResults);
-
-                _ = _taskCompleted.TrySetResult(true);
+                _availableQueries = await CodeQLLoadAvailableQueriesAsync();
             }
-            catch (Exception ex)
-            {
-                _ = _taskCompleted.TrySetResult(false);
-                throw new Exception(ex.ToString());
-            }
-
-            await System.Threading.Tasks.Task.Delay(1000);
+            return _availableQueries;
         }
 
-        public static async System.Threading.Tasks.Task<bool> CodeQLGenerateDatabaseAsync()
+        private async System.Threading.Tasks.Task<string[]> CodeQLLoadAvailableQueriesAsync()
+        {
+            List<string> packList = await CodeQLRunner.Instance.FindPacksAsync();
+            List<string> queryList = await CodeQLRunner.Instance.FindQueriesAsync(packList, queriesNSuites: false);
+            return packList.ToArray();
+        }
+
+        public async System.Threading.Tasks.Task CodeQLRunQuerySetAsync(string querySet)
+        {
+           
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            string visualStudioShellPath = ProjectHelper.GetVisualStudioFolder();
+            Project project = ProjectHelper.GetActiveProject();
+            string projectArch = ProjectHelper.GetProjectPropertyValue(project, "Platform");
+            string projectDirectory = ProjectHelper.GetProjectDirectory(project);
+
+            string startCommand = "\"" + Path.Combine(visualStudioShellPath, @"VC\Auxiliary\Build\vcvarsall.bat") + "\" " + projectArch + " && cd /d \"" + projectDirectory + "\" &&";
+
+            // await runner.CheckCodeQLPacksInstalledAsync();
+
+            List<string> queriesList;
+            if (querySet.EndsWith(".qls") || querySet.EndsWith("ql"))
+            {
+                queriesList = File.Exists(querySet)
+                    ? new List<string>() { querySet }
+                    : throw new ArgumentException("Query file does not exist: " + querySet);
+            }
+            else
+            {
+                // queriesList = await runner.GetQueriesFromSuiteAsync(querySet);
+            }
+
+            // await SarifViewerUtils.OpenSarifLogAsync(sarifResults);
+
+            _ = _taskCompleted.TrySetResult(true);
+        }
+
+        public async System.Threading.Tasks.Task<bool> CodeQLGenerateDatabaseAsync()
         {
             // TODO
             await System.Threading.Tasks.Task.Delay(1000);
