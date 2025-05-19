@@ -17,6 +17,8 @@ using Microsoft.CodeAnalysis.Sarif.Converters;
 using Microsoft.Sarif.Viewer;
 using Microsoft.Sarif.Viewer.ErrorList;
 using Microsoft.Sarif.Viewer.Services;
+using Microsoft.Sarif.Viewer.Views;
+using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -107,7 +109,27 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             return _availableQueries;
         }
 
-        private async System.Threading.Tasks.Task<string[]> CodeQLLoadAvailableQueriesAsync()
+        public async Task CodeQLInstallPacksAsync(HashSet<string> packs)
+        {
+            await CodeQLRunner.Instance.InstallDefaultPacksAsync(packs);
+        }
+
+        public async Task CodeQLInstallAsync(string version, string path, bool addToPath, HashSet<string> packs)
+        {
+           
+            if (!CodeQLRunner.Instance.IsInstalled())
+            {
+                await CodeQLRunner.Instance.InstallCodeQLCLIAsync(version: version, installPath: path);
+            }
+            await CodeQLInstallPacksAsync(packs);
+
+            if (addToPath)
+            {
+                Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User) + ";" + System.IO.Path.Combine(path, "codeql"), EnvironmentVariableTarget.User);
+            }
+        }
+
+        public async System.Threading.Tasks.Task<string[]> CodeQLLoadAvailableQueriesAsync()
         {
             List<string> packList = await CodeQLRunner.Instance.FindPacksAsync();
             List<string> queryList = await CodeQLRunner.Instance.FindQueriesAsync(packList, queriesNSuites: false);

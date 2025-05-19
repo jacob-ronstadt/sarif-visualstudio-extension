@@ -14,6 +14,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)CodeLocationObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeLocationObjectTypeDescriptor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLExceptions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLInstallHelper.xaml.cs">
+      <DependentUpon>CodeQLInstallHelper.xaml</DependentUpon>
+    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLRunner.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeQLCommand.cs" />
@@ -215,13 +218,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)VersionControlParser\VersionControlParserFactory.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\ViewModelLocator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\AnalysisStepView.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Views\CodeQLInstallHelper.xaml.cs">
-      <DependentUpon>CodeQLInstallHelper.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Views\CodeQLPackInstallHelper.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLPackInstallHelper.xaml.cs">
       <DependentUpon>CodeQLPackInstallHelper.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Views\InstallWindow.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)CodeQL\InstallWindow.xaml.cs">
       <DependentUpon>InstallWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Views\RelatedLocationsTreeView.cs" />
@@ -244,6 +244,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Sarif\Suppression.Extensions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLInstallHelper.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="$(MSBuildThisFileDirectory)Controls\FeedbackControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -316,11 +320,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Views\CodeQLInstallHelper.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Views\CodeQLPackInstallHelper.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)CodeQL\CodeQLPackInstallHelper.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -332,7 +332,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Views\InstallWindow.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)CodeQL\InstallWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

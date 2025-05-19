@@ -2,8 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+
+using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
+
+using Sarif.Viewer.VisualStudio.Core.CodeQL;
 
 namespace Microsoft.Sarif.Viewer.Views
 {
@@ -13,33 +18,17 @@ namespace Microsoft.Sarif.Viewer.Views
     public partial class CodeQLPackInstallHelper : Window
     {
         private int _installCLickCount = 0;
+        private readonly HashSet<string> _languagePacks;
 
         public CodeQLPackInstallHelper()
         {
-            try
-            {
-                _installCLickCount = 0;
-                Owner = Application.Current.MainWindow;
-                InitializeComponent();
-                DataContext = this;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
+            _installCLickCount = 0;
+            _languagePacks = new HashSet<string>();
+            Owner = Application.Current.MainWindow;
+            InitializeComponent();
+            DataContext = this;
         }
 
-        // public async Task UpdateMissingPackBoxesAsync()
-        // {
-        //     try
-        //     {
-        //       // TODO
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         throw new Exception("Error updating missing pack boxes", ex);
-        //     }
-        // }
 
         /// <summary>
         /// Handles the event when the create DVL button is clicked.
@@ -54,16 +43,33 @@ namespace Microsoft.Sarif.Viewer.Views
         {
             if (_installCLickCount == 0)
             {
+                _ = this.InstallPacksAsync();
+            }
+            else if (_installCLickCount > 0)
+            {
+                throw new CodeQLExeNotFoundException("CodeQL already installed by extension, but was not found. Please check your installation.");
+            }
+        }
+
+        private async System.Threading.Tasks.Task InstallPacksAsync()
+        {
+            if (_installCLickCount == 0)
+            {
                 _installCLickCount++;
                 try
                 {
-                    // TODO
+                    InstallWindow iw = new InstallWindow();
+                    iw.Owner = this;
+                    iw.DataContext = this;
+                    iw.Show();
+                    await CodeQLService.Instance.CodeQLInstallPacksAsync(_languagePacks);
+                    iw.Close();
+                    MessageBox.Show("CodeQL Packs installed");
                 }
                 catch (Exception ex)
                 {
                     throw new Exception(ex.ToString(), ex);
                 }
-
                 Close();
             }
         }
@@ -82,19 +88,10 @@ namespace Microsoft.Sarif.Viewer.Views
             Close();
         }
 
-        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void LanguagePack_Checked(object sender, RoutedEventArgs e)
         {
-            // TODO
-        }
-
-        private void ProgressBar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            // TODO
-        }
-
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            // TODO
+            // FIXME get content only
+            _languagePacks.Add(sender.ToString());
         }
     }
 }

@@ -98,7 +98,6 @@ namespace Microsoft.Sarif.Viewer
 
             return result;
         }
-
         internal static bool IsProjectKind(Project project, Guid projectKindGuid)
         {
             ThreadHelper.ThrowIfNotOnUIThread();

@@ -3,6 +3,8 @@
 
 using System.Windows;
 
+using Sarif.Viewer.VisualStudio.Core.CodeQL;
+
 namespace Microsoft.Sarif.Viewer.Views
 {
     /// <summary>
@@ -13,6 +15,11 @@ namespace Microsoft.Sarif.Viewer.Views
         public InstallWindow()
         {
             InitializeComponent();
+        }
+
+        private void ButtonCancel_Click(object sender, RoutedEventArgs e)
+        {
+            CodeQLService.Instance.CancelIfRunning();
         }
     }
 }

@@ -19,6 +19,7 @@ using Microsoft.Sarif.Viewer.ResultSources.Domain.Models;
 using Microsoft.Sarif.Viewer.ResultSources.Factory;
 using Microsoft.Sarif.Viewer.Services;
 using Microsoft.Sarif.Viewer.Tags;
+using Microsoft.Sarif.Viewer.Views;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
@@ -185,6 +186,17 @@ namespace Microsoft.Sarif.Viewer
                 // SolutionEvents.OnAfterBackgroundSolutionLoadComplete will not by triggered until the user opens another solution.
                 // Need to manually start monitor in this case.
                 this.sarifFolderMonitor?.StartWatching();
+
+                if (!CodeQLService.Instance.CodeQLIsInstalled())
+                {
+                    CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                    codeQLInstallHelper.ShowDialog();
+                }
+                else if((await CodeQLService.Instance.CodeQLLoadAvailableQueriesAsync()).Length == 0)
+                {
+                    CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
+                    codeQLInstallHelper.ShowDialog();
+                }
             }
 
             SolutionEvents.OnBeforeCloseSolution += this.SolutionEvents_OnBeforeCloseSolution;

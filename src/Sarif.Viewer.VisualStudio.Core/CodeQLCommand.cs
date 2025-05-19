@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
+using Microsoft.Sarif.Viewer;
 using Microsoft.Sarif.Viewer.Views;
+
 
 namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 {
@@ -172,7 +174,10 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                         {
                             throw new Exception("CodeQL already running"); // FIXME
                         }
-
+                        if (string.IsNullOrEmpty(_currentDropDownComboChoice))
+                        {
+                            throw new Exception("No query selected");
+                        }
                         CodeQLService.Instance.InitTask();
 
                         // remake database in case anything has changed.
@@ -192,6 +197,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                     }
                     catch (Exception ex)
                     {
+                        CodeQLService.Instance.ClearTask();
                         throw new Exception(ex.ToString()); // FIXME
                     }
 
@@ -209,6 +215,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                         }
                         else
                         {
+                            CodeQLService.Instance.ClearTask();
                             throw new Exception(ex.ToString()); // FIXME
                         }
                     }
@@ -228,6 +235,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                     }
                     catch (Exception ex)
                     {
+                        CodeQLService.Instance.ClearTask();
                         throw new Exception(ex.ToString()); // FIXME
                     }
 
@@ -267,11 +275,21 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                         _discoveredComboChoices = await CodeQLService.Instance.AvailableQueriesAsync();
                         CodeQLService.Instance.ClearTask();
                     }
+                    
+                    if(_discoveredComboChoices != null && _discoveredComboChoices.Length == 0)
+                    {
+                        if (_discoveredComboChoices.Length == 0)
+                        {
+                            CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
+                            codeQLInstallHelper.ShowDialog();
+                        }
+                    }
 
                     if (_currentDropDownComboChoice == null && _discoveredComboChoices != null)
                     {
                         _currentDropDownComboChoice = _discoveredComboChoices[0];
                     }
+                   
                     Marshal.GetNativeVariantForObject(_currentDropDownComboChoice, vOut);
                 }
                 else

@@ -4,16 +4,30 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Management;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Formatting;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
+using Microsoft.VisualStudio.Package;
+using Microsoft.VisualStudio.Text.Document;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 using Sarif.Viewer.VisualStudio.Core.CodeQL;
+
+using SharpCompress.Archives;
+using SharpCompress.Common;
+
+using ZstdSharp;
 
 using static System.Net.WebRequestMethods;
 
@@ -80,6 +94,70 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// </summary>
         private static readonly string defaultCodeQLPath = "C:\\codeql-home\\codeql\\codeql.exe";
 
+        private static readonly Dictionary<string, List<string>> defaultPacks = new Dictionary<string, List<string>>()
+        {
+            { "C++",
+                new List<string>{
+                    "codeql/cpp-queries",
+                    "codeql/cpp-all"
+                }
+            },
+            { "C#",
+                new List<string>{
+                    "codeql/csharp-queries",
+                    "codeql/csharp-all"
+                }
+            },
+            { "go",
+                new List<string>{
+                    "codeql/go-queries",
+                    "codeql/go-all"
+                }
+            },
+            { "Java",
+                new List<string>{
+                    "codeql/java-queries",
+                    "codeql/java-all"
+                }
+            },
+            { "javascript",
+                new List<string>{
+                    "codeql/javascript-queries",
+                    "codeql/javascript-all"
+                }
+            },
+            { "python",
+                new List<string>{
+                    "codeql/python-queries",
+                    "codeql/python-all"
+                }
+            },
+            { "ruby",
+                new List<string>{
+                    "codeql/ruby-queries",
+                    "codeql/ruby-all"
+                }
+            },
+            { "rust",
+                new List<string>{
+                    "codeql/rust-queries",
+                    "codeql/rust-all"
+                }
+            },
+            { "swift",
+                new List<string>{
+                    "codeql/swift-queries",
+                    "codeql/swift-all"
+                }
+            },
+            { "Windows Drivers",
+                new List<string>{
+                    "microsoft/windows-drivers",
+                    "microsoft/cpp-queries",
+                    "codeql/cpp-all"
+                }
+            }
+        };
 
         public void Initialize(string sourceDir= "", string buildEnv = "", Func<string, string, Task> outputFunc = null)
         {
@@ -92,6 +170,8 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             this.buildEnv = buildEnv;
         }
 
+        
+      
         /// <summary>
         /// Gets the instance of the service.
         /// </summary>
@@ -116,33 +196,91 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             codeQLExe = GetInstalLocation();
         }
 
-
         public async Task<string> GetLatestVersionAsync()
         {
             using (var client = new HttpClient())
             {
-                string url = "https://github.com/github/codeql-cli-binaries/releases/latest";
-                HttpResponseMessage response = await client.GetAsync(url);
-                _ = response.EnsureSuccessStatusCode();
-                using (Stream stream = await response.Content.ReadAsStreamAsync())
-                {
-                    using (var reader = new StreamReader(stream))
-                    {
-                        string line;
-                        while ((line = await reader.ReadLineAsync()) != null)
-                        {
-                            if (line.Contains("<title>") && line.Contains("Release"))
-                            {
-                                string version = Regex.Replace(line, "[^0-9`.]+", string.Empty, RegexOptions.IgnoreCase);
-                                return version;
-                            }
-                        }
-                    }
-                }
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+                client.DefaultRequestHeaders.Add("User-Agent", "codeql-action");
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/github/codeql-action/releases/latest");
 
-                return string.Empty;
+                HttpResponseMessage response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string content = await response.Content.ReadAsStringAsync();
+                    JObject json = JObject.Parse(content);
+                    return((string)json["tag_name"]).Replace("codeql-bundle-v","");
+                }
+                else
+                {
+                    return string.Empty;
+                }
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="version"></param>
+        /// <param name="installPath"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task InstallCodeQLCLIAsync(string version = "", string installPath = "")
+        {
+            if (string.IsNullOrEmpty(version))
+            {
+                throw new Exception("Version Error");
+            }
+
+            if (string.IsNullOrEmpty(installPath))
+            {
+                installPath = "C:\\codeql-home\\";
+            }
+
+            // TODO verify if the version is valid and if the path is valid
+            try
+            {
+                if (!Directory.Exists(installPath))
+                {
+                    Directory.CreateDirectory(installPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Path Error", ex);
+            }
+
+            try
+            {
+                new Version(version);
+            }
+            catch (FormatException)
+            {
+                throw new Exception("Incorrect Version Format");
+            }
+            catch
+            {
+                throw new Exception("Version Error");
+            }
+
+            await Task.Run(async () =>
+            {
+                using (var client = new HttpClient())
+                {
+                    string url = "https://github.com/github/codeql-cli-binaries/releases/download/v" + version + "/codeql.zip";
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+                    using (FileStream fs = new FileStream(System.IO.Path.Combine(installPath, "codeql.zip"), FileMode.CreateNew))
+                    {
+                        await response.Content.CopyToAsync(fs);
+                    }
+                }
+            });
+            await Task.Run(() => { System.IO.Compression.ZipFile.ExtractToDirectory(System.IO.Path.Combine(installPath, "codeql.zip"), installPath); });
+        }
+
 
         /// <summary>
         /// Installs a CodeQL pack asynchronously.
@@ -150,9 +288,9 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <param name="pack">The CodeQL pack to install.</param>
         /// <param name="version">The version of the CodeQL pack to install.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task InstallPackAsync(string pack, string version)
+        public async Task InstallPackAsync(string pack, bool forceInstall=false)
         {
-            string output = await RunCodeQLProcAsync("pack download " + pack + "@" + version + " --allow-prerelease --force -v");
+            string output = await RunCodeQLProcAsync("pack download " + pack + (forceInstall ? " --force":"") +" -v");
             foreach (string line in output.Split(
                                new string[] { "\r\n", "\r", "\n" },
                                StringSplitOptions.None))
@@ -165,6 +303,41 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
         }
 
+        private List<string> EnumerateDefaultPacks(HashSet<string> packs)
+        {
+            var result = new List<string>();
+            foreach (string pack in packs)
+            {
+                var temp = new List<string>();
+                if (defaultPacks.TryGetValue(pack, out temp))
+                {
+                    result.AddRange(temp);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="CodeQLPacksNotFoundException"></exception>
+        public async Task InstallDefaultPacksAsync(HashSet<string> packs)
+        {
+            foreach (string pack in EnumerateDefaultPacks(packs))
+            {
+                try
+                {
+                    await InstallPackAsync(pack);
+                }
+                catch (Exception ex)
+                {
+                    throw new CodeQLPacksNotFoundException("Could not install required CodeQL pack(s)", ex);
+                }
+            }
+        }
+
+
         /// <summary>
         /// Runs a CodeQL command asynchronously.
         /// </summary>
@@ -172,7 +345,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <param name="workingDir">The working directory for the command.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown if process fails.</exception>
-        public  async Task<string> RunCodeQLProcAsync(string cmd, string workingDir = null)
+        public async Task<string> RunCodeQLProcAsync(string cmd, string workingDir = null)
         {
             var proc = new System.Diagnostics.Process();
             proc.StartInfo.FileName = codeQLExe;
@@ -317,6 +490,11 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
 
                 return !System.IO.File.Exists(path) ? string.Empty : path;
             }
+        }
+
+        public bool IsInstalled()
+        {
+            return !string.IsNullOrEmpty(CodeQLRunner.Instance.GetInstalLocation());
         }
 
         /// <summary>
