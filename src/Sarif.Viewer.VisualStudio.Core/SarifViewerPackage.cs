@@ -323,6 +323,20 @@ namespace Microsoft.Sarif.Viewer
             this.sarifFolderMonitor?.StartWatching();
 
             this.JoinableTaskFactory.Run(async () => await InitializeResultSourceHostAsync());
+
+            // check codeql is installed and there are available packs
+            if (!CodeQLService.Instance.CodeQLIsInstalled())
+            {
+                CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                codeQLInstallHelper.ShowDialog();
+            }
+
+            bool noPacks = this.JoinableTaskFactory.Run(async () => await CodeQLService.Instance.CodeQLLoadAvailableQueriesAsync()).Length == 0;
+            if (noPacks)
+            {
+                CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
+                codeQLInstallHelper.ShowDialog();
+            }
         }
 
         /// <summary>

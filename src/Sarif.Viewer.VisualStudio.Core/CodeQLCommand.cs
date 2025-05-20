@@ -73,44 +73,32 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             {
                 var oleCommand = new OleMenuCommand(
                       this.MenuItemCallback,
-                      new CommandID(CommandSet, CodeQLAnalyzeCommandId))
-                {
-                    ParametersDescription = "$"
-                };
+                      new CommandID(CommandSet, CodeQLAnalyzeCommandId));
                 commandService.AddCommand(oleCommand);
 
                 oleCommand = new OleMenuCommand(
                     this.MenuItemCallback,
-                    new CommandID(CommandSet, CodeQLStopCommandId))
-                {
-                    ParametersDescription = "$"
-                };
+                    new CommandID(CommandSet, CodeQLStopCommandId));
                 commandService.AddCommand(oleCommand);
 
                 oleCommand = new OleMenuCommand(
                     this.MenuItemCallback,
-                    new CommandID(CommandSet, CodeQLDatabaseCommandId))
-                {
-                    ParametersDescription = "$"
-                };
+                    new CommandID(CommandSet, CodeQLDatabaseCommandId));
                 commandService.AddCommand(oleCommand);
 
                 oleCommand = new OleMenuCommand(
                     this.MenuItemCallback,
-                    new CommandID(CommandSet, CodeQLLoadQueriesCommandId))
-                {
-                    ParametersDescription = "$"
-                };
+                    new CommandID(CommandSet, CodeQLLoadQueriesCommandId));
                 commandService.AddCommand(oleCommand);
 
                 // Combo box
                 oleCommand = new OleMenuCommand(
-                    new EventHandler(this.OnMenuMyDropDownComboCallback),
+                    new EventHandler(this.OnMenuMyDropDownCombo),
                     new CommandID(CommandSet, CodeQLComboId));
                 commandService.AddCommand(oleCommand);
 
                 oleCommand = new OleMenuCommand(
-                    new EventHandler(this.OnMenuMyDropDownComboGetListCallback),
+                    new EventHandler(this.OnMenuMyDropDownComboGetList),
                     new CommandID(CommandSet, ComboGetListId));
                 commandService.AddCommand(oleCommand);
             }
@@ -241,7 +229,14 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 
                     break;
                 case CodeQLLoadQueriesCommandId:
-
+                    try
+                    {
+                        await CodeqlRefreshAvailableQueriesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception(ex.ToString()); // FIXME
+                    }
                     break;
                 case CodeQLComboId:
                     break;
@@ -252,15 +247,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             }
         }
 
-        private void OnMenuMyDropDownComboCallback(object sender, EventArgs e)
-        {
-            if (this.package != null)
-            {
-                _ = ((AsyncPackage)this.package).JoinableTaskFactory.RunAsync(async () => { await OnMenuMyDropDownComboAsync(sender, e); }); // FIXME
-            }
-        }
-
-        private async System.Threading.Tasks.Task OnMenuMyDropDownComboAsync(object sender, EventArgs e)
+        private void OnMenuMyDropDownCombo(object sender, EventArgs e)
         {
             if (e is OleMenuCmdEventArgs eventArgs)
             {
@@ -269,27 +256,6 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                 if (vOut != IntPtr.Zero)
                 {
                     // when vOut is non-NULL, the IDE is requesting the current value for the combo
-                    if (_discoveredComboChoices == null && !CodeQLService.Instance.IsCodeQLTaskRunning())
-                    {
-                        CodeQLService.Instance.InitTask();
-                        _discoveredComboChoices = await CodeQLService.Instance.AvailableQueriesAsync();
-                        CodeQLService.Instance.ClearTask();
-                    }
-                    
-                    if(_discoveredComboChoices != null && _discoveredComboChoices.Length == 0)
-                    {
-                        if (_discoveredComboChoices.Length == 0)
-                        {
-                            CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
-                            codeQLInstallHelper.ShowDialog();
-                        }
-                    }
-
-                    if (_currentDropDownComboChoice == null && _discoveredComboChoices != null)
-                    {
-                        _currentDropDownComboChoice = _discoveredComboChoices[0];
-                    }
-                   
                     Marshal.GetNativeVariantForObject(_currentDropDownComboChoice, vOut);
                 }
                 else
@@ -305,15 +271,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         }
 
 
-        private void OnMenuMyDropDownComboGetListCallback(object sender, EventArgs e)
-        {
-            if (this.package != null)
-            {
-                _=((AsyncPackage)this.package).JoinableTaskFactory.RunAsync(async () => { await OnMenuMyDropDownComboGetListAsync(sender, e); }); // FIXME
-            }
-        }
-
-        private async System.Threading.Tasks.Task OnMenuMyDropDownComboGetListAsync(object sender, EventArgs e)
+        private void OnMenuMyDropDownComboGetList(object sender, EventArgs e)
         {
             if (e is OleMenuCmdEventArgs eventArgs)
             {
@@ -328,7 +286,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                 {
                     if (_discoveredComboChoices == null)
                     {
-                        _discoveredComboChoices = (await CodeQLService.Instance.AvailableQueriesAsync());
+                        throw new Exception("No queries found");
                     }
                     Marshal.GetNativeVariantForObject(_discoveredComboChoices, vOut);
 
@@ -344,9 +302,17 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             }
         }
 
-        /*        private async void CodeQLLoadAvailableAsync(object sender, EventArgs e)
-                {
-                    await System.Threading.Tasks.Task.Delay(1000);
-                }*/
+        public async System.Threading.Tasks.Task CodeqlRefreshAvailableQueriesAsync()
+        {
+            if (_discoveredComboChoices == null && !CodeQLService.Instance.IsCodeQLTaskRunning())
+            {
+                _discoveredComboChoices = await CodeQLService.Instance.AvailableQueriesAsync();
+            }
+
+            if (_currentDropDownComboChoice == null && _discoveredComboChoices != null && _discoveredComboChoices.Length != 0)
+            {
+                _currentDropDownComboChoice = _discoveredComboChoices[0];
+            }
+        }
     }
 }

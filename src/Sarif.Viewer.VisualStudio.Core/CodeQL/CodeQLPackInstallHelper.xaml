@@ -7,19 +7,24 @@
         mc:Ignorable="d"
         Title="CodeQL Packs" Height="317" Width="272" WindowStyle="ToolWindow" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen">
     <Grid HorizontalAlignment="Center" Width="237" Margin="0,10,0,1">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="17*"/>
+            <ColumnDefinition Width="220*"/>
+        </Grid.ColumnDefinitions>
         <Button Name="buttonInstall" Click="ButtonInstall_Click"
-                VerticalAlignment="Bottom" Height="23"  Content="Install" Margin="0,0,118,10" HorizontalAlignment="Right" Width="106" />
+                VerticalAlignment="Bottom" Height="23"  Content="Install" Margin="0,0,118,10" HorizontalAlignment="Right" Width="106" Grid.ColumnSpan="2" />
         <Button Name="buttonCancel" Click="ButtonCancel_Click" 
-            VerticalAlignment="Bottom" Height="23" Content="Cancel" Margin="0,0,10,10" HorizontalAlignment="Right" Width="74" />
-        <CheckBox x:Name="windowsDrivers" Content="Windows Drivers" HorizontalAlignment="Left" Margin="10,170,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="cppCheckBox" Content="C++" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="csharpCheckBox" Content="C#" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="goCheckBox" Content="Go" HorizontalAlignment="Left" Margin="10,70,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="javaCheckBox" Content="Java" HorizontalAlignment="Left" Margin="10,50,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="jsCheckBox" Content="JavaScript" HorizontalAlignment="Left" Margin="10,130,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="pythohCheckBox" Content="Python" HorizontalAlignment="Left" Margin="10,90,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="rubyCheckBox" Content="Ruby" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="swiftCheckBox" Content="Swift" HorizontalAlignment="Left" Margin="10,150,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
+            VerticalAlignment="Bottom" Height="23" Content="Cancel" Margin="0,0,10,10" HorizontalAlignment="Right" Width="74" Grid.Column="1" />
+        <CheckBox x:Name="windowsDrivers" Content="Windows Drivers" HorizontalAlignment="Left" Margin="10,201,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <CheckBox x:Name="cppCheckBox" Content="C++" HorizontalAlignment="Left" Margin="10,41,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <CheckBox x:Name="csharpCheckBox" Content="C#" HorizontalAlignment="Left" Margin="10,61,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <CheckBox x:Name="goCheckBox" Content="Go" HorizontalAlignment="Left" Margin="10,101,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <CheckBox x:Name="javaCheckBox" Content="Java" HorizontalAlignment="Left" Margin="10,81,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <CheckBox x:Name="jsCheckBox" Content="JavaScript" HorizontalAlignment="Left" Margin="10,161,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <CheckBox x:Name="pythohCheckBox" Content="Python" HorizontalAlignment="Left" Margin="10,121,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <CheckBox x:Name="rubyCheckBox" Content="Ruby" HorizontalAlignment="Left" Margin="10,141,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <CheckBox x:Name="swiftCheckBox" Content="Swift" HorizontalAlignment="Left" Margin="10,181,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <TextBlock HorizontalAlignment="Left" Margin="9,0,0,0" TextWrapping="Wrap" Text="No CodeQL packs found. Please select default packs to install" VerticalAlignment="Top" Height="34" Width="218" Grid.ColumnSpan="2"/>
 
     </Grid>
 </Window>

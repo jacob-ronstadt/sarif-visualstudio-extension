@@ -7,6 +7,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
@@ -67,12 +68,10 @@ namespace Microsoft.Sarif.Viewer.Views
             catch
             {
                 iw.Close();
-                MessageBox.Show("Error Installing CodeQL");
                 Close();
-                return;
+                throw new Exception("Error installing codeql");
             }
             iw.Close();
-            MessageBox.Show("CodeQL successfully installed");
             Close();
         }
 
@@ -101,8 +100,15 @@ namespace Microsoft.Sarif.Viewer.Views
         }
         private void LanguagePack_Checked(object sender, RoutedEventArgs e)
         {
-            // FIXME get content only
-            _languagePacks.Add(sender.ToString());
+            CheckBox checkBox = (CheckBox)sender;
+            if (checkBox.IsChecked ?? false)
+            {
+                _languagePacks.Add(checkBox.Content.ToString());
+            }
+            else
+            {
+                _languagePacks.Remove(checkBox.Content.ToString());
+            }
         }
     }
 }

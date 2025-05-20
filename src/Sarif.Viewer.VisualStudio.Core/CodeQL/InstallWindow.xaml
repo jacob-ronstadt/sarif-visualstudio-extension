@@ -7,8 +7,8 @@
         mc:Ignorable="d"
         Title="CodeQL" Height="187" Width="365" WindowStyle="ToolWindow" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterOwner" Cursor="Wait">
     <Grid>
-        <ProgressBar HorizontalAlignment="Center" Height="17" Margin="0,94,0,0" VerticalAlignment="Top" Width="263" IsIndeterminate="True"/>
+        <ProgressBar HorizontalAlignment="Center" Height="17" Margin="0,89,0,0" VerticalAlignment="Top" Width="263" IsIndeterminate="True"/>
         <TextBlock HorizontalAlignment="Left" Margin="51,31,0,0" TextWrapping="Wrap" Text="Please wait..." VerticalAlignment="Top" Height="30" Width="300"/>
-        <Button Name="buttonCancel" Click="ButtonCancel_Click" VerticalAlignment="Bottom" Height="23" Content="Cancel" Margin="0,0,51,27" HorizontalAlignment="Right" Width="74" />
+        <Button Name="buttonCancel" Click="ButtonCancel_Click" VerticalAlignment="Bottom" Height="23" Content="Cancel" Margin="0,0,51,10" HorizontalAlignment="Right" Width="74" />
     </Grid>
 </Window>

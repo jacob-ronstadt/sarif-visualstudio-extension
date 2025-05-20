@@ -184,7 +184,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                                                 OLEMSGICON.OLEMSGICON_CRITICAL,
                                                 OLEMSGBUTTON.OLEMSGBUTTON_OK,
                                                 OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-            }            // await SarifViewerUtils.OpenSarifLogAsync(sarifResults);
+            }           
 
             _ = _taskCompleted.TrySetResult(true);
         }
