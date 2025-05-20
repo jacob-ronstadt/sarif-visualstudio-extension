@@ -6,11 +6,8 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 
+using Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
-using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-
-using Sarif.Viewer.VisualStudio.Core.CodeQL;
 
 namespace Microsoft.Sarif.Viewer.Views
 {
@@ -66,7 +63,7 @@ namespace Microsoft.Sarif.Viewer.Views
                     iw.Show();
                     await CodeQLService.Instance.CodeQLInstallPacksAsync(_languagePacks);
                     await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
-                    iw.Close();                  
+                    iw.Close();
                     Close();
 
                 }
@@ -95,7 +92,7 @@ namespace Microsoft.Sarif.Viewer.Views
         private void LanguagePack_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox checkBox = (CheckBox)sender;
-            if(checkBox.IsChecked ?? false)
+            if (checkBox.IsChecked ?? false)
             {
                 _languagePacks.Add(checkBox.Content.ToString());
             }

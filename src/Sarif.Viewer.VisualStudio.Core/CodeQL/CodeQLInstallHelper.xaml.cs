@@ -3,17 +3,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
+using Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
-using Microsoft.VisualStudio.PlatformUI;
-
-using Sarif.Viewer.VisualStudio.Core.CodeQL;
 
 namespace Microsoft.Sarif.Viewer.Views
 {
@@ -63,7 +59,7 @@ namespace Microsoft.Sarif.Viewer.Views
             iw.Show();
             try
             {
-                await CodeQLService.Instance.CodeQLInstallAsync(___TextBoxVersion_.Text, ___TextBoxPath_.Text, AddToPathCheckBox.IsChecked??false, _languagePacks);
+                await CodeQLService.Instance.CodeQLInstallAsync(___TextBoxVersion_.Text, ___TextBoxPath_.Text, AddToPathCheckBox.IsChecked ?? false, _languagePacks);
             }
             catch
             {

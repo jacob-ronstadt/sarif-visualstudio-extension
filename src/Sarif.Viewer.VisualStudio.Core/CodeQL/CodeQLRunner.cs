@@ -4,32 +4,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Management;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
-using Microsoft.VisualStudio.Package;
-using Microsoft.VisualStudio.Text.Document;
 
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-using Sarif.Viewer.VisualStudio.Core.CodeQL;
-
-using SharpCompress.Archives;
-using SharpCompress.Common;
-
-using ZstdSharp;
-
-using static System.Net.WebRequestMethods;
 
 namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
 {
@@ -159,7 +143,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
         };
 
-        public void Initialize(string sourceDir= "", string buildEnv = "", Func<string, string, Task> outputFunc = null)
+        public void Initialize(string sourceDir = "", string buildEnv = "", Func<string, string, Task> outputFunc = null)
         {
             analysisDir = sourceDir;
             if (!Directory.Exists(analysisDir))
@@ -170,8 +154,8 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             this.buildEnv = buildEnv;
         }
 
-        
-      
+
+
         /// <summary>
         /// Gets the instance of the service.
         /// </summary>
@@ -202,7 +186,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             {
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
                 client.DefaultRequestHeaders.Add("User-Agent", "codeql-action");
-                
+
                 var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/github/codeql-action/releases/latest");
 
                 HttpResponseMessage response = await client.SendAsync(request);
@@ -211,7 +195,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 {
                     string content = await response.Content.ReadAsStringAsync();
                     JObject json = JObject.Parse(content);
-                    return((string)json["tag_name"]).Replace("codeql-bundle-v","");
+                    return ((string)json["tag_name"]).Replace("codeql-bundle-v", "");
                 }
                 else
                 {
@@ -288,9 +272,9 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <param name="pack">The CodeQL pack to install.</param>
         /// <param name="version">The version of the CodeQL pack to install.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task InstallPackAsync(string pack, bool forceInstall=false)
+        public async Task InstallPackAsync(string pack, bool forceInstall = false)
         {
-            string output = await RunCodeQLProcAsync("pack download " + pack + (forceInstall ? " --force":"") +" -v");
+            string output = await RunCodeQLProcAsync("pack download " + pack + (forceInstall ? " --force" : "") + " -v");
             foreach (string line in output.Split(
                                new string[] { "\r\n", "\r", "\n" },
                                StringSplitOptions.None))
@@ -373,7 +357,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <param name="qlpacks">The list of CodeQL packs to search.</param>
         /// <param name="queriesNSuites">If true, searches for queries. If false, searches for suites.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public  async Task<List<string>> FindQueriesAsync(List<string> qlpacks, bool queriesNSuites = true)
+        public async Task<List<string>> FindQueriesAsync(List<string> qlpacks, bool queriesNSuites = true)
         {
             var queries = new List<string>();
 
@@ -394,7 +378,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <param name="qlpack">The CodeQL pack to search.</param>
         /// <param name="queriesNSuites">If true, searches for queries. If false, searches for suites.</param>"
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public  async Task<List<string>> FindQueriesAsync(string qlpack, bool queriesNSuites = true)
+        public async Task<List<string>> FindQueriesAsync(string qlpack, bool queriesNSuites = true)
         {
             string output = await RunCodeQLProcAsync("pack packlist " + qlpack + " --format=json");
             var queries = new List<string>();
@@ -420,7 +404,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the process fails.</exception>
-        public  async Task<List<string>> FindPacksAsync()
+        public async Task<List<string>> FindPacksAsync()
         {
             string output = await RunCodeQLProcAsync("resolve packs --show-hidden-packs --format=json");
             var packs = new List<string>();
@@ -442,7 +426,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             return packs; // TODO do this with json
         }
 
-       
+
         /// <summary>
         /// Gets the installation location of CodeQL.
         /// </summary>
@@ -698,7 +682,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
 
             await RunCMDProcAsync(strCmdText, proccessExitedFunc, ct);
-           
+
         }
 
         /// <summary>

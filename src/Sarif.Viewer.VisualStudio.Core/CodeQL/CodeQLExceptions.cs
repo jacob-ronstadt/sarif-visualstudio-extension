@@ -2,9 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Threading.Tasks;
-
-using Microsoft.VisualStudio.Shell;
 
 namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions
 {
@@ -93,6 +90,6 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions
     public class CodeQLExceptionHandler
     {
 
-      
+
     }
 }

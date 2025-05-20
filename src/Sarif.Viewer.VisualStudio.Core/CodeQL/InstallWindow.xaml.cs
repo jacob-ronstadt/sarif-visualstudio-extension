@@ -3,7 +3,7 @@
 
 using System.Windows;
 
-using Sarif.Viewer.VisualStudio.Core.CodeQL;
+using Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL;
 
 namespace Microsoft.Sarif.Viewer.Views
 {

@@ -3,16 +3,16 @@
 
 using System;
 using System.ComponentModel.Design;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
+using Microsoft.Sarif.Viewer.Views;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
-using Microsoft.Sarif.Viewer;
-using Microsoft.Sarif.Viewer.Views;
 
 
-namespace Sarif.Viewer.VisualStudio.Core.CodeQL
+namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 {
     internal class CodeQLCommand
     {
@@ -168,17 +168,15 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                         }
                         CodeQLService.Instance.InitTask();
 
-                        // remake database in case anything has changed.
+                        Trace.WriteLine("Creating CodeQL database");
                         bool dbSuccessful = await CodeQLService.Instance.CodeQLGenerateDatabaseAsync();
+
                         if (dbSuccessful
                             && CodeQLService.Instance.IsCodeQLTaskCompleted())
                         {
                             CodeQLService.Instance.InitTask(); // init again since starting a new CodeQL process
+                            Trace.WriteLine($"Starting CodeQL Analysis using {_currentDropDownComboChoice}");
                             await CodeQLService.Instance.CodeQLRunQuerySetAsync(_currentDropDownComboChoice.Trim().ToLower());
-                        }
-                        else
-                        {
-                            // await OutputToWindowPaneAsync("CodeQL", "Database generation failed, skipping query set execution.");
                         }
 
                         CodeQLService.Instance.ClearTask();
@@ -306,7 +304,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         {
             if (_discoveredComboChoices == null && !CodeQLService.Instance.IsCodeQLTaskRunning())
             {
-                _discoveredComboChoices = await CodeQLService.Instance.AvailableQueriesAsync();
+                _discoveredComboChoices = await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync();
             }
 
             if (_currentDropDownComboChoice == null && _discoveredComboChoices != null && _discoveredComboChoices.Length != 0)

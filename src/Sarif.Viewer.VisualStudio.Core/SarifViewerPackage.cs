@@ -20,6 +20,7 @@ using Microsoft.Sarif.Viewer.ResultSources.Factory;
 using Microsoft.Sarif.Viewer.Services;
 using Microsoft.Sarif.Viewer.Tags;
 using Microsoft.Sarif.Viewer.Views;
+using Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
@@ -29,10 +30,7 @@ using Microsoft.VisualStudio.Text.Tagging;
 
 using Newtonsoft.Json;
 
-using Sarif.Viewer.VisualStudio.Core.CodeQL;
-
 using ResultSourcesConstants = Microsoft.Sarif.Viewer.ResultSources.Domain.Models.Constants;
-
 using Task = System.Threading.Tasks.Task;
 
 namespace Microsoft.Sarif.Viewer
@@ -192,11 +190,12 @@ namespace Microsoft.Sarif.Viewer
                     CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
                     codeQLInstallHelper.ShowDialog();
                 }
-                else if((await CodeQLService.Instance.CodeQLLoadAvailableQueriesAsync()).Length == 0)
+                else if ((await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0)
                 {
                     CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
                     codeQLInstallHelper.ShowDialog();
                 }
+                await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
             }
 
             SolutionEvents.OnBeforeCloseSolution += this.SolutionEvents_OnBeforeCloseSolution;
@@ -331,12 +330,13 @@ namespace Microsoft.Sarif.Viewer
                 codeQLInstallHelper.ShowDialog();
             }
 
-            bool noPacks = this.JoinableTaskFactory.Run(async () => await CodeQLService.Instance.CodeQLLoadAvailableQueriesAsync()).Length == 0;
+            bool noPacks = this.JoinableTaskFactory.Run(async () => await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0;
             if (noPacks)
             {
                 CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
                 codeQLInstallHelper.ShowDialog();
             }
+            this.JoinableTaskFactory.Run(async () => await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
         }
 
         /// <summary>

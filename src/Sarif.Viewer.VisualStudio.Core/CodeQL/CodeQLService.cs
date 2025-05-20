@@ -3,29 +3,25 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.IO.Packaging;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 using EnvDTE;
 
-using EnvDTE80;
-
 using Microsoft.CodeAnalysis.Sarif.Converters;
-using Microsoft.Sarif.Viewer;
 using Microsoft.Sarif.Viewer.ErrorList;
 using Microsoft.Sarif.Viewer.Services;
-using Microsoft.Sarif.Viewer.Views;
-using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
 
-namespace Sarif.Viewer.VisualStudio.Core.CodeQL
+namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 {
     internal class CodeQLService
     {
@@ -34,10 +30,9 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
         /// </summary>
         private static CancellationTokenSource _cancelToken;
         private static TaskCompletionSource<bool> _taskCompleted;
-        private static string[] _availableQueries;
         private static bool _isInstalled;
+        private static Dictionary<string, string> _queryDict;
         private static CodeQLService _instance = null;
-
         /// <summary>
         /// Gets the instance of the service.
         /// </summary>
@@ -59,7 +54,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             _isInstalled = false;
             _taskCompleted = null;
             _cancelToken = null;
-            _availableQueries = null;
+            _queryDict = new Dictionary<string, string>();
         }
 
         public bool IsCodeQLTaskRunning()
@@ -99,14 +94,37 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                 }
             }
         }
-
-        public async Task<string[]> AvailableQueriesAsync()
+        private void HandleKeyColision(string existingKey, string newValue)
         {
-            if (_availableQueries == null)
+            string existingValue = _queryDict[existingKey];
+            string existingKeyReplacement = string.Join("/", existingValue.Skip(existingValue.Split('/').Length - existingKey.Split('/').Length - 1));
+            _queryDict.Remove(existingKey);
+            _queryDict.Add(existingKeyReplacement, existingValue);
+
+            string newKey = string.Join("/", existingValue.Skip(newValue.Split('/').Length - existingKey.Split('/').Length - 1));
+            _queryDict.Add(newKey, newValue);
+        }
+
+        public async Task<string[]> CodeQLFindAvailableQueriesAsync()
+        {
+            List<string> packList = await CodeQLRunner.Instance.FindPacksAsync();
+            List<string> queryList = await CodeQLRunner.Instance.FindQueriesAsync(packList, queriesNSuites: false);
+            _queryDict.Clear();
+            foreach (string query in queryList)
             {
-                _availableQueries = await CodeQLLoadAvailableQueriesAsync();
+                string key = query.Replace("\\", "/").Split('/').Last();
+                if (_queryDict.ContainsKey(key))
+                {
+                    HandleKeyColision(key, query);
+
+                }
+                else
+                {
+                    _queryDict.Add(key, query.Replace("\\", "/"));
+                }
             }
-            return _availableQueries;
+
+            return _queryDict.Keys.ToArray();
         }
 
         public async Task CodeQLInstallPacksAsync(HashSet<string> packs)
@@ -116,7 +134,7 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 
         public async Task CodeQLInstallAsync(string version, string path, bool addToPath, HashSet<string> packs)
         {
-           
+
             if (!CodeQLRunner.Instance.IsInstalled())
             {
                 await CodeQLRunner.Instance.InstallCodeQLCLIAsync(version: version, installPath: path);
@@ -129,13 +147,6 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             }
         }
 
-        public async System.Threading.Tasks.Task<string[]> CodeQLLoadAvailableQueriesAsync()
-        {
-            List<string> packList = await CodeQLRunner.Instance.FindPacksAsync();
-            List<string> queryList = await CodeQLRunner.Instance.FindQueriesAsync(packList, queriesNSuites: false);
-            return queryList.ToArray();
-        }
-
         public bool CodeQLIsInstalled()
         {
             // avoid starting a process every time
@@ -146,9 +157,13 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
             return _isInstalled;
         }
 
-        public async System.Threading.Tasks.Task CodeQLRunQuerySetAsync(string querySet)
+        public async System.Threading.Tasks.Task CodeQLRunQuerySetAsync(string query)
         {
-            
+            if (!_queryDict.TryGetValue(query, out string querySet)) 
+            {
+                throw new ArgumentException("Query file does not exist: " + query);
+            }
+
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             string visualStudioShellPath = ProjectHelper.GetVisualStudioFolder();
             Project project = ProjectHelper.GetActiveProject();
@@ -157,8 +172,6 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 
             string startCommand = "\"" + Path.Combine(visualStudioShellPath, @"VC\Auxiliary\Build\vcvarsall.bat") + "\" " + projectArch + " && cd /d \"" + projectDirectory + "\" &&";
 
-            // await runner.CheckCodeQLPacksInstalledAsync();
-
             List<string> queriesList;
             if (querySet.EndsWith(".qls") || querySet.EndsWith("ql"))
             {
@@ -166,11 +179,9 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                     ? new List<string>() { querySet }
                     : throw new ArgumentException("Query file does not exist: " + querySet);
             }
-            else
-            {
-                // queriesList = await runner.GetQueriesFromSuiteAsync(querySet);
-            }
+            StartProgressOutputAsync().Forget();
             string sarifResults = await CodeQLRunner.Instance.RunCodeQLQuerySetAsync(querySet, _cancelToken.Token);
+            
             try
             {
                 await ErrorListService.ProcessLogFileWithTracesAsync(sarifResults, ToolFormat.None, promptOnLogConversions: true, cleanErrors: true, openInEditor: false).ConfigureAwait(continueOnCapturedContext: false);
@@ -184,15 +195,17 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
                                                 OLEMSGICON.OLEMSGICON_CRITICAL,
                                                 OLEMSGBUTTON.OLEMSGBUTTON_OK,
                                                 OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-            }           
+            }
 
             _ = _taskCompleted.TrySetResult(true);
         }
 
         public async System.Threading.Tasks.Task<bool> CodeQLGenerateDatabaseAsync()
         {
+            StartProgressOutputAsync().Forget();
+
             string arch = "";
-            string configName="";
+            string configName = "";
 
             await ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
@@ -208,14 +221,24 @@ namespace Sarif.Viewer.VisualStudio.Core.CodeQL
 
                 string projectDir = ProjectHelper.GetProjectDirectory(activeProject);
                 string startCommand = "\"" + Path.Combine(ProjectHelper.GetVisualStudioFolder(), @"VC\Auxiliary\Build\vcvarsall.bat") + "\" " + arch + " && cd /d \"" + projectDir + "\" &&";
-                
+
                 CodeQLRunner.Instance.Initialize(projectDir, startCommand);
             });
-          
+
             string buildCmd = "msbuild /t:rebuild /p:Configuration=" + configName + " /p:Platform=" + arch;
             await CodeQLRunner.Instance.GenerateDatabaseAsync(buildCmd, _cancelToken.Token);
             _taskCompleted.TrySetResult(true);
             return true;
+        }
+      
+        private async System.Threading.Tasks.Task StartProgressOutputAsync()
+        {
+            Trace.WriteLine("");
+            do
+            {
+                Trace.Write(".");
+                await System.Threading.Tasks.Task.Delay(1000);
+            } while(IsCodeQLTaskRunning());
         }
     }
 }
