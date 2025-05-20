@@ -141,7 +141,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
         /// <param name="e">Event args.</param>
         private async System.Threading.Tasks.Task MenuItemCallbackAsync(object sender, EventArgs e)
         {
-            if (!CodeQLService.Instance.CodeQLIsInstalled())
+            if (!CodeQLService.CodeQLIsInstalled())
             {
                 await ((AsyncPackage)this.package).JoinableTaskFactory.RunAsync(async () =>
                 {
@@ -250,7 +250,6 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             if (e is OleMenuCmdEventArgs eventArgs)
             {
                 IntPtr vOut = eventArgs.OutValue;
-
                 if (vOut != IntPtr.Zero)
                 {
                     // when vOut is non-NULL, the IDE is requesting the current value for the combo
@@ -284,10 +283,10 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                 {
                     if (_discoveredComboChoices == null)
                     {
+                        _discoveredComboChoices = CodeQLService.Instance.AvailableQueries.ToArray();
                         throw new Exception("No queries found");
                     }
                     Marshal.GetNativeVariantForObject(_discoveredComboChoices, vOut);
-
                 }
                 else
                 {
@@ -302,12 +301,9 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 
         public async System.Threading.Tasks.Task CodeqlRefreshAvailableQueriesAsync()
         {
-            if (_discoveredComboChoices == null && !CodeQLService.Instance.IsCodeQLTaskRunning())
-            {
-                _discoveredComboChoices = await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync();
-            }
+            _discoveredComboChoices = await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync();
 
-            if (_currentDropDownComboChoice == null && _discoveredComboChoices != null && _discoveredComboChoices.Length != 0)
+            if (_discoveredComboChoices != null && _discoveredComboChoices.Length != 0)
             {
                 _currentDropDownComboChoice = _discoveredComboChoices[0];
             }

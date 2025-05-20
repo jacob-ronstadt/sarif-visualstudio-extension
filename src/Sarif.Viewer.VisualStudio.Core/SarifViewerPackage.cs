@@ -185,7 +185,7 @@ namespace Microsoft.Sarif.Viewer
                 // Need to manually start monitor in this case.
                 this.sarifFolderMonitor?.StartWatching();
 
-                if (!CodeQLService.Instance.CodeQLIsInstalled())
+                if (!CodeQLService.CodeQLIsInstalled())
                 {
                     CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
                     codeQLInstallHelper.ShowDialog();
@@ -324,19 +324,21 @@ namespace Microsoft.Sarif.Viewer
             this.JoinableTaskFactory.Run(async () => await InitializeResultSourceHostAsync());
 
             // check codeql is installed and there are available packs
-            if (!CodeQLService.Instance.CodeQLIsInstalled())
+            if (!CodeQLService.CodeQLIsInstalled())
             {
                 CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
                 codeQLInstallHelper.ShowDialog();
             }
-
-            bool noPacks = this.JoinableTaskFactory.Run(async () => await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0;
-            if (noPacks)
+            else
             {
-                CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
-                codeQLInstallHelper.ShowDialog();
+                bool noPacks = this.JoinableTaskFactory.Run(async () => await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0;
+                if (noPacks)
+                {
+                    CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
+                    codeQLInstallHelper.ShowDialog();
+                }
+                this.JoinableTaskFactory.Run(async () => await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
             }
-            this.JoinableTaskFactory.Run(async () => await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
         }
 
         /// <summary>

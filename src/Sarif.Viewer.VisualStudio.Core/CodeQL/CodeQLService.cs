@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,14 +26,19 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 {
     internal class CodeQLService
     {
-        /// <summary>
-        /// Current selection for the drop down combo box.
-        /// </summary>
-        private static CancellationTokenSource _cancelToken;
-        private static TaskCompletionSource<bool> _taskCompleted;
-        private static bool _isInstalled;
-        private static Dictionary<string, string> _queryDict;
         private static CodeQLService _instance = null;
+        private CancellationTokenSource _cancelToken;
+        private TaskCompletionSource<bool> _taskCompleted;
+        private readonly Dictionary<string, string> _queryDict;
+        public  List<string> AvailableQueries 
+        { 
+            get 
+            {
+                return _queryDict.Keys.ToList();
+            }
+            set { }
+        }
+
         /// <summary>
         /// Gets the instance of the service.
         /// </summary>
@@ -51,7 +57,6 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 
         private CodeQLService()
         {
-            _isInstalled = false;
             _taskCompleted = null;
             _cancelToken = null;
             _queryDict = new Dictionary<string, string>();
@@ -94,15 +99,55 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                 }
             }
         }
-        private void HandleKeyColision(string existingKey, string newValue)
+        private void HandleKeyCollision(string existingKey, string newValue)
         {
-            string existingValue = _queryDict[existingKey];
-            string existingKeyReplacement = string.Join("/", existingValue.Skip(existingValue.Split('/').Length - existingKey.Split('/').Length - 1));
-            _queryDict.Remove(existingKey);
-            _queryDict.Add(existingKeyReplacement, existingValue);
+            if (_queryDict[existingKey].Equals(newValue))
+            {
+                return;
+            }
+            StringBuilder replacementKey = new StringBuilder();
+            StringBuilder newValueKey = new StringBuilder();
+            List<string> existingValueParts = _queryDict[existingKey].Split('/').ToList();
+            List<string> newValueParts = newValue.Split('/').ToList();
+            while ((existingValueParts.Count > 0 && newValueParts.Count > 0) && 
+                existingValueParts.Last().Equals(newValueParts.Last()))
+            {
+                replacementKey.Insert(0, "/" + existingValueParts.Last() );
+                existingValueParts.RemoveAt(existingValueParts.Count - 1);
+                newValueKey.Insert(0, "/" + newValueParts.Last());
+                newValueParts.RemoveAt(newValueParts.Count - 1); 
+            }
 
-            string newKey = string.Join("/", existingValue.Skip(newValue.Split('/').Length - existingKey.Split('/').Length - 1));
-            _queryDict.Add(newKey, newValue);
+            // add remaining unique value
+            if (newValueParts.Count > 0 && existingValueParts.Count > 0) {
+                newValueKey.Insert(0, newValueParts.Last());
+                replacementKey.Insert(0, existingValueParts.Last());
+
+                // if at a version, try to get the qlpack for it which should be the preceding two segments
+                if(Version.TryParse(newValueParts.Last(), out _) && newValueParts.Count > 2)
+                {
+                    newValueKey.Insert(0, newValueParts.ElementAt(newValueParts.Count - 3) +"/" + 
+                        newValueParts.ElementAt(newValueParts.Count - 2) + "/");
+                }
+                if (Version.TryParse(existingValueParts.Last(), out _) && existingValueParts.Count > 2)
+                {
+                    replacementKey.Insert(0, existingValueParts.ElementAt(existingValueParts.Count - 2) + "/" + 
+                        existingValueParts.ElementAt(existingValueParts.Count - 2) + "/");
+                }
+            }
+            else
+            {
+                throw new Exception("Unable to find new key");
+            }
+
+            if (newValueKey.ToString().Equals(replacementKey.ToString()))
+            {
+                throw new Exception("Unable to find new key");
+            }
+            _queryDict.Remove(existingKey);
+            _queryDict.Add(replacementKey.ToString(), string.Join("/", existingValueParts));
+
+            _queryDict.Add(newValueKey.ToString(), newValue);
         }
 
         public async Task<string[]> CodeQLFindAvailableQueriesAsync()
@@ -115,7 +160,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                 string key = query.Replace("\\", "/").Split('/').Last();
                 if (_queryDict.ContainsKey(key))
                 {
-                    HandleKeyColision(key, query);
+                    HandleKeyCollision(key, query);
 
                 }
                 else
@@ -132,29 +177,68 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             await CodeQLRunner.Instance.InstallDefaultPacksAsync(packs);
         }
 
-        public async Task CodeQLInstallAsync(string version, string path, bool addToPath, HashSet<string> packs)
+        public async Task CodeQLInstallAsync(string version, string installPath, bool addToPath, HashSet<string> packs)
         {
-
-            if (!CodeQLRunner.Instance.IsInstalled())
+            if (string.IsNullOrEmpty(version))
             {
-                await CodeQLRunner.Instance.InstallCodeQLCLIAsync(version: version, installPath: path);
+                throw new Exception("Version Error");
             }
+
+            if (string.IsNullOrEmpty(installPath))
+            {
+                installPath = "C:\\codeql-home\\";
+            }
+
+            // TODO verify if the version is valid and if the path is valid
+            try
+            {
+                if (!Directory.Exists(installPath))
+                {
+                    Directory.CreateDirectory(installPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Path Error", ex);
+            }
+
+            try
+            {
+                new Version(version);
+            }
+            catch (FormatException)
+            {
+                throw new Exception("Incorrect Version Format");
+            }
+            catch
+            {
+                throw new Exception("Version Error");
+            }
+
+            using (var client = new HttpClient())
+            {
+                string url = "https://github.com/github/codeql-cli-binaries/releases/download/v" + version + "/codeql.zip";
+                HttpResponseMessage response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+                using (FileStream fs = new FileStream(System.IO.Path.Combine(installPath, "codeql.zip"), FileMode.CreateNew))
+                {
+                    await response.Content.CopyToAsync(fs);
+                }
+            }
+            System.IO.Compression.ZipFile.ExtractToDirectory(System.IO.Path.Combine(installPath, "codeql.zip"), installPath);
+
             await CodeQLInstallPacksAsync(packs);
 
+            await CodeQLFindAvailableQueriesAsync();
             if (addToPath)
             {
-                Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User) + ";" + System.IO.Path.Combine(path, "codeql"), EnvironmentVariableTarget.User);
+                Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User) + ";" + System.IO.Path.Combine(installPath, "codeql"), EnvironmentVariableTarget.User);
             }
         }
 
-        public bool CodeQLIsInstalled()
+        public static bool CodeQLIsInstalled()
         {
-            // avoid starting a process every time
-            if (!_isInstalled)
-            {
-                _isInstalled = !string.IsNullOrEmpty(CodeQLRunner.Instance.GetInstalLocation());
-            }
-            return _isInstalled;
+           return CodeQLRunner.IsInstalled();
         }
 
         public async System.Threading.Tasks.Task CodeQLRunQuerySetAsync(string query)

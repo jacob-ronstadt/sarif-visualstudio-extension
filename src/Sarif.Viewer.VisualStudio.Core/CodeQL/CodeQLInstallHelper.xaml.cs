@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,6 +12,8 @@ using System.Windows.Controls;
 using Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
+
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Sarif.Viewer.Views
 {
@@ -84,10 +88,32 @@ namespace Microsoft.Sarif.Viewer.Views
         {
             Close();
         }
+        public async Task<string> GetLatestVersionAsync()
+        {
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+                client.DefaultRequestHeaders.Add("User-Agent", "codeql-action");
 
+                var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/github/codeql-action/releases/latest");
+
+                HttpResponseMessage response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string content = await response.Content.ReadAsStringAsync();
+                    JObject json = JObject.Parse(content);
+                    return ((string)json["tag_name"]).Replace("codeql-bundle-v", "");
+                }
+                else
+                {
+                    return string.Empty;
+                }
+            }
+        }
         private async Task SetVersionCheckBoxTextAsync()
         {
-            ___TextBoxVersion_.Text = await CodeQLRunner.Instance.GetLatestVersionAsync();
+            ___TextBoxVersion_.Text = await GetLatestVersionAsync();
         }
 
         private void UseLatest_Checked(object sender, RoutedEventArgs e)

@@ -178,92 +178,13 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         private CodeQLRunner()
         {
             codeQLExe = GetInstalLocation();
-        }
-
-        public async Task<string> GetLatestVersionAsync()
-        {
-            using (var client = new HttpClient())
+            if (string.IsNullOrEmpty(codeQLExe))
             {
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-                client.DefaultRequestHeaders.Add("User-Agent", "codeql-action");
-
-                var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/github/codeql-action/releases/latest");
-
-                HttpResponseMessage response = await client.SendAsync(request);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string content = await response.Content.ReadAsStringAsync();
-                    JObject json = JObject.Parse(content);
-                    return ((string)json["tag_name"]).Replace("codeql-bundle-v", "");
-                }
-                else
-                {
-                    return string.Empty;
-                }
+                throw new Exception("CodeQL not installed");
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="version"></param>
-        /// <param name="installPath"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public async Task InstallCodeQLCLIAsync(string version = "", string installPath = "")
-        {
-            if (string.IsNullOrEmpty(version))
-            {
-                throw new Exception("Version Error");
-            }
-
-            if (string.IsNullOrEmpty(installPath))
-            {
-                installPath = "C:\\codeql-home\\";
-            }
-
-            // TODO verify if the version is valid and if the path is valid
-            try
-            {
-                if (!Directory.Exists(installPath))
-                {
-                    Directory.CreateDirectory(installPath);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Path Error", ex);
-            }
-
-            try
-            {
-                new Version(version);
-            }
-            catch (FormatException)
-            {
-                throw new Exception("Incorrect Version Format");
-            }
-            catch
-            {
-                throw new Exception("Version Error");
-            }
-
-            await Task.Run(async () =>
-            {
-                using (var client = new HttpClient())
-                {
-                    string url = "https://github.com/github/codeql-cli-binaries/releases/download/v" + version + "/codeql.zip";
-                    HttpResponseMessage response = await client.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    using (FileStream fs = new FileStream(System.IO.Path.Combine(installPath, "codeql.zip"), FileMode.CreateNew))
-                    {
-                        await response.Content.CopyToAsync(fs);
-                    }
-                }
-            });
-            await Task.Run(() => { System.IO.Compression.ZipFile.ExtractToDirectory(System.IO.Path.Combine(installPath, "codeql.zip"), installPath); });
-        }
+  
 
 
         /// <summary>
@@ -432,7 +353,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// </summary>
         /// <returns>The installation path of CodeQL.</returns>
         /// <exception cref="CodeQLExeNotFoundException">Thrown when CodeQL is not found.</exception>
-        public string GetInstalLocation()
+        public static string GetInstalLocation()
         {
             if (System.IO.File.Exists(defaultCodeQLPath))
             {
@@ -476,9 +397,9 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
         }
 
-        public bool IsInstalled()
+        public static bool IsInstalled()
         {
-            return !string.IsNullOrEmpty(CodeQLRunner.Instance.GetInstalLocation());
+            return !string.IsNullOrEmpty(GetInstalLocation());
         }
 
         /// <summary>
