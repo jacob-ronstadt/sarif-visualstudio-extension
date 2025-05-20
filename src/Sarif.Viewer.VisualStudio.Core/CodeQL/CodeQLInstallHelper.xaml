@@ -11,12 +11,12 @@
                 TextWrapping="Wrap" HorizontalAlignment="Right" Width="390" Height="65" VerticalAlignment="Top" Margin="0,10,37,0" 
                 ><Run Text="Click the 'Install CodeQL' button to install CodeQL to the default path specified below."/><LineBreak/><Run/><LineBreak/>
             <Run Text="Note: If installing CodeQL to a non-default location, add it to your PATH environment variable."/><LineBreak/><Run/><LineBreak/><Run Text="Get more information at aka.ms/wddst"/></TextBlock>
-        <Button Name="buttonInstall" Click="ButtonInstall_Click"
+        <Button Name="buttonInstall" Click="ButtonInstall_Click" IsEnabled="False"
                 VerticalAlignment="Bottom" Height="23"  Content="Install CodeQL" Margin="0,0,99,24" HorizontalAlignment="Right" Width="106" />
         <Button Name="buttonCancel" Click="ButtonCancel_Click" 
             VerticalAlignment="Bottom" Height="23" Content="Cancel" Margin="0,0,10,24" HorizontalAlignment="Right" Width="74" />
         <TextBox x:Name="___TextBoxPath_" HorizontalAlignment="Right" Margin="0,102,102,0" TextWrapping="Wrap" Text="C:\codeql-home\" VerticalAlignment="Top" Width="253" Height="24"/>
-        <TextBox x:Name="___TextBoxVersion_" HorizontalAlignment="Left" Margin="82,130,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="76" Height="23"/>
+        <TextBox x:Name="___TextBoxVersion_" HorizontalAlignment="Left" Margin="82,130,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="76" Height="23" TextChanged="TextBoxVersion_TextChanged"/>
         <TextBlock
             TextWrapping="Wrap" HorizontalAlignment="Right" Width="67" Height="16" VerticalAlignment="Top" Margin="0,106,360,0" 
                 Text="Install Path:" 

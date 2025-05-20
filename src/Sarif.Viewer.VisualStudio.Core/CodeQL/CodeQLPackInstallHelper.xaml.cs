@@ -60,7 +60,7 @@ namespace Microsoft.Sarif.Viewer.Views
                     InstallWindow iw = new InstallWindow();
                     iw.Owner = this;
                     iw.DataContext = this;
-                    iw.Show();
+                    iw.ShowDialog();
                     await CodeQLService.Instance.CodeQLInstallPacksAsync(_languagePacks);
                     await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
                     iw.Close();
