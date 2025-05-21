@@ -36,6 +36,7 @@ namespace Microsoft.Sarif.Viewer.Views
         }
         public InstallWindow(HashSet<string> packs)
         {
+            InitializeComponent();
             _packs = packs;
             backgroundWorker = new System.ComponentModel.BackgroundWorker();
             this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.InstallPacksOnlyBackground);
@@ -51,6 +52,8 @@ namespace Microsoft.Sarif.Viewer.Views
         private void InstallCodeQLAndPacksBackground(object sender, DoWorkEventArgs e)
         {
             ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallAsync(_version, _path, _addToPath, _packs));
+            ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
+
             e.Result = true;
         }
         private void BackgroundWorkCompleted(object sender, EventArgs e)

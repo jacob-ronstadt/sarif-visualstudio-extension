@@ -72,6 +72,14 @@ namespace Microsoft.Sarif.Viewer.Views
             {
                 _languagePacks.Remove(checkBox.Content.ToString());
             }
+            if (_languagePacks.Count > 0 )
+            {
+                buttonInstall.IsEnabled = true;
+            }
+            else
+            {
+                buttonInstall.IsEnabled = false;
+            }
         }
     }
 }
