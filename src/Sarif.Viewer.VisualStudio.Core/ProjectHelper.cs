@@ -293,16 +293,42 @@ namespace Microsoft.Sarif.Viewer
 
         internal static async System.Threading.Tasks.Task BuildProjectAsync()
         {
-            TaskCompletionSource<bool> buildTcs = new TaskCompletionSource<bool>();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            Project project = GetActiveProject();
+            if (project != null )
+            {
+                if (project.IsDirty)
+                {
+                    TaskCompletionSource<bool> buildTcs = new TaskCompletionSource<bool>();
+                    DTE2 dte = (DTE2)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+                    BuildEvents buildEvents = dte.Events.BuildEvents;
+                    buildEvents.OnBuildDone += (scope, action) =>
+                    {
+                        buildTcs.TrySetResult(true);
+                    };
+                    dte.ExecuteCommand("Build.BuildSelection");
+                    await buildTcs.Task;
+                }
+            }
+            else
+            {
+                throw new Exception("No project");
+            }
+        }
+
+        internal static async System.Threading.Tasks.Task ShowProgressAsync(string text)
+        {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             DTE2 dte = (DTE2)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
-            BuildEvents buildEvents = dte.Events.BuildEvents;
-            buildEvents.OnBuildDone += (scope, action) =>
-            {
-                buildTcs.TrySetResult(true);
-            };
-            dte.ExecuteCommand("Build.BuildSelection");
-            await buildTcs.Task;
+            dte.StatusBar.Text = text;
+            dte.StatusBar.Animate(true, 0);
+        }
+        internal static async System.Threading.Tasks.Task HideProgressAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            DTE2 dte = (DTE2)Microsoft.VisualStudio.Shell.Package.GetGlobalService(typeof(DTE));
+            dte.StatusBar.Clear();
         }
     }
 }

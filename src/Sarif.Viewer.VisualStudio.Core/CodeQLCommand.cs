@@ -4,11 +4,17 @@
 using System;
 using System.ComponentModel.Design;
 using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
+using System.Security.Policy;
 using System.Threading.Tasks;
 
+using Microsoft.CodeAnalysis.Sarif.Converters;
+using Microsoft.Sarif.Viewer.ErrorList;
+using Microsoft.Sarif.Viewer.Services;
 using Microsoft.Sarif.Viewer.Views;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 
 
@@ -156,56 +162,59 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             switch (menuCommand.CommandID.ID)
             {
                 case CodeQLAnalyzeCommandId:
+                    bool dbSuccessful = false;
+                  
+                    if (CodeQLService.Instance.IsCodeQLTaskRunning())
+                    {
+                        throw new Exception("CodeQL already running"); // FIXME
+                    }
+                    if (string.IsNullOrEmpty(_currentDropDownComboChoice))
+                    {
+                        throw new Exception("No query selected");
+                    }
+                    CodeQLService.Instance.InitTask();
+
+                    Trace.WriteLine("Creating CodeQL database");
                     try
                     {
-                        if (CodeQLService.Instance.IsCodeQLTaskRunning())
-                        {
-                            throw new Exception("CodeQL already running"); // FIXME
-                        }
-                        if (string.IsNullOrEmpty(_currentDropDownComboChoice))
-                        {
-                            throw new Exception("No query selected");
-                        }
-                        CodeQLService.Instance.InitTask();
-
-                        Trace.WriteLine("Creating CodeQL database");
-                        bool dbSuccessful = await CodeQLService.Instance.CodeQLGenerateDatabaseAsync();
-
-                        if (dbSuccessful
-                            && CodeQLService.Instance.IsCodeQLTaskCompleted())
-                        {
-                            CodeQLService.Instance.InitTask(); // init again since starting a new CodeQL process
-                            Trace.WriteLine($"Starting CodeQL Analysis using {_currentDropDownComboChoice}");
-                            await CodeQLService.Instance.CodeQLRunQuerySetAsync(_currentDropDownComboChoice.Trim().ToLower());
-                        }
-
-                        CodeQLService.Instance.ClearTask();
+                        dbSuccessful = await CodeQLService.Instance.CodeQLGenerateDatabaseAsync();
                     }
                     catch (Exception ex)
                     {
                         CodeQLService.Instance.ClearTask();
-                        throw new Exception(ex.ToString()); // FIXME
+                        VsShellUtilities.ShowMessageBox(Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider,
+                                                        $"CodeQL database create failed with exception {ex.ToString()}",
+                                                        null, // title
+                                                        OLEMSGICON.OLEMSGICON_CRITICAL,
+                                                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                                                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
                     }
+                   
+                    if (dbSuccessful
+                        && CodeQLService.Instance.IsCodeQLTaskCompleted())
+                    {
+                        CodeQLService.Instance.InitTask(); // init again since starting a new CodeQL process
+                        Trace.WriteLine($"Starting CodeQL analysis using {_currentDropDownComboChoice}");
+                        try
+                        {
+                            await CodeQLService.Instance.CodeQLRunQuerySetAsync(_currentDropDownComboChoice.Trim().ToLower());
+                        }
+                        catch (Exception ex)
+                        {
+                            CodeQLService.Instance.ClearTask();
+                            VsShellUtilities.ShowMessageBox(Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider,
+                                                            $"CodeQL analysis failed with exception {ex.ToString()}",
+                                                            null, // title
+                                                            OLEMSGICON.OLEMSGICON_CRITICAL,
+                                                            OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                                                            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                        }
+                    }
+                    CodeQLService.Instance.ClearTask();
 
                     break;
                 case CodeQLStopCommandId:
-                    try
-                    {
-                        CodeQLService.Instance.CancelIfRunning();
-                    }
-                    catch (Exception ex)
-                    {
-                        if (ex.GetType() == typeof(TaskCanceledException))
-                        {
-                            // MessageBox.Show("CodeQL process cancelled"); // FIXME
-                        }
-                        else
-                        {
-                            CodeQLService.Instance.ClearTask();
-                            throw new Exception(ex.ToString()); // FIXME
-                        }
-                    }
-
+                    CodeQLService.Instance.CancelIfRunning();
                     break;
                 case CodeQLDatabaseCommandId:
                     try
@@ -227,14 +236,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 
                     break;
                 case CodeQLLoadQueriesCommandId:
-                    try
-                    {
-                        await CodeqlRefreshAvailableQueriesAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception(ex.ToString()); // FIXME
-                    }
+                    await CodeqlRefreshAvailableQueriesAsync();
                     break;
                 case CodeQLComboId:
                     break;
@@ -284,6 +286,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     if (_discoveredComboChoices == null)
                     {
                         _discoveredComboChoices = CodeQLService.Instance.AvailableQueries.ToArray();
+                        Trace.WriteLine("No queries found. Please install CodeQL packs and/or refresh");
                         throw new Exception("No queries found");
                     }
                     Marshal.GetNativeVariantForObject(_discoveredComboChoices, vOut);

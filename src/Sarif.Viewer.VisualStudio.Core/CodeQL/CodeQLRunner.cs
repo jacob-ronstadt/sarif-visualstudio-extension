@@ -55,7 +55,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <summary>
         /// Optional output windows pane.
         /// </summary>
-        private Func<string, string, Task> outputFunc;
+        private Action<string> outputFunc;
 
         /// <summary>
         /// cmd command for build environment setup.
@@ -143,7 +143,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
         };
 
-        public void Initialize(string sourceDir = "", string buildEnv = "", Func<string, string, Task> outputFunc = null)
+        public void Initialize(string sourceDir = "", string buildEnv = "", Action<string> outputFunc = null)
         {
             analysisDir = sourceDir;
             if (!Directory.Exists(analysisDir))
@@ -488,14 +488,14 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                     {
                         if (!string.IsNullOrEmpty(e.Data))
                         {
-                            _ = outputFunc("CodeQL", e.Data);
+                            outputFunc(e.Data);
                         }
                     };
                     codeqlProc.ErrorDataReceived += (sender, e) =>
                     {
                         if (!string.IsNullOrEmpty(e.Data))
                         {
-                            _ = outputFunc("CodeQL", e.Data);
+                             outputFunc(e.Data);
                         }
                     };
                 }
@@ -522,7 +522,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                     {
                         if (outputFunc != null)
                         {
-                            _ = outputFunc("CodeQL", "CodeQL process killed");
+                            outputFunc( "CodeQL process killed");
                         }
                     }
                     else

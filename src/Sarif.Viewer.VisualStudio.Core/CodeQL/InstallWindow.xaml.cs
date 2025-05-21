@@ -4,11 +4,14 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Security.Policy;
 using System.Windows;
 
 
 using Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Microsoft.Sarif.Viewer.Views
 {
@@ -44,16 +47,32 @@ namespace Microsoft.Sarif.Viewer.Views
         }
         private void InstallPacksOnlyBackground(object sender, DoWorkEventArgs e)
         {
-            ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallPacksAsync(_packs));
-            ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
-            e.Result = true; // FIXME Probably a better way to do this
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallPacksAsync(_packs));
+                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
+                e.Result = true; // FIXME Probably a better way to do this
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"CodeQL install fail. Threw exception: {ex.Message}");
+                e.Result = false;
+            }
         }
 
         private void InstallCodeQLAndPacksBackground(object sender, DoWorkEventArgs e)
         {
-            ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallAsync(_version, _path, _addToPath, _packs));
-            ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
-            e.Result = true;
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallAsync(_version, _path, _addToPath, _packs));
+                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
+                e.Result = true;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"CodeQL pack install fail. Threw exception: {ex.Message}");
+                e.Result = false;
+            }
         }
         private void BackgroundWorkCompleted(object sender, EventArgs e)
         {
@@ -61,8 +80,8 @@ namespace Microsoft.Sarif.Viewer.Views
         }
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)
         {
-            CodeQLService.Instance.CancelIfRunning();
             backgroundWorker.CancelAsync();
+            CodeQLService.Instance.CancelIfRunning();
             this.Close();
         }
     }

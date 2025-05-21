@@ -76,6 +76,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
         {
             _taskCompleted = null;
             _cancelToken = null;
+            ThreadHelper.JoinableTaskFactory.Run(() => ProjectHelper.HideProgressAsync());
         }
 
         public void InitTask()
@@ -98,6 +99,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     _ = _taskCompleted.TrySetCanceled();
                 }
             }
+            ThreadHelper.JoinableTaskFactory.Run(() => ProjectHelper.HideProgressAsync());
         }
         private void HandleKeyCollision(string existingKey, string newValue)
         {
@@ -179,29 +181,14 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 
         public async Task CodeQLInstallAsync(string version, string installPath, bool addToPath, HashSet<string> packs)
         {
-            if (string.IsNullOrEmpty(version))
-            {
-                throw new Exception("Version Error");
-            }
-
             if (string.IsNullOrEmpty(installPath))
             {
                 installPath = "C:\\codeql-home\\";
             }
-
-            // TODO verify if the version is valid and if the path is valid
-            try
+            if (!Directory.Exists(installPath))
             {
-                if (!Directory.Exists(installPath))
-                {
-                    Directory.CreateDirectory(installPath);
-                }
+                Directory.CreateDirectory(installPath);
             }
-            catch (Exception ex)
-            {
-                throw new Exception("Path Error", ex);
-            }
-
             if(!Version.TryParse(version, out _))
             {
                 throw new Exception("Version Error");
@@ -255,7 +242,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     ? new List<string>() { querySet }
                     : throw new ArgumentException("Query file does not exist: " + querySet);
             }
-            StartProgressOutputAsync().Forget();
+            await ProjectHelper.ShowProgressAsync("Analyzing CodeQL Database...");
             string sarifResults = await CodeQLRunner.Instance.RunCodeQLQuerySetAsync(querySet, _cancelToken.Token);
             
             try
@@ -276,9 +263,13 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             _ = _taskCompleted.TrySetResult(true);
         }
 
+        private void CodeQLOutput(string message)
+        {
+            Trace.WriteLine(message);
+        }
         public async System.Threading.Tasks.Task<bool> CodeQLGenerateDatabaseAsync()
         {
-            StartProgressOutputAsync().Forget();
+            await ProjectHelper.ShowProgressAsync("Generating CodeQL Database...");
 
             string arch = "";
             string configName = "";
@@ -298,23 +289,13 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                 string projectDir = ProjectHelper.GetProjectDirectory(activeProject);
                 string startCommand = "\"" + Path.Combine(ProjectHelper.GetVisualStudioFolder(), @"VC\Auxiliary\Build\vcvarsall.bat") + "\" " + arch + " && cd /d \"" + projectDir + "\" &&";
 
-                CodeQLRunner.Instance.Initialize(projectDir, startCommand);
+                CodeQLRunner.Instance.Initialize(projectDir, startCommand, CodeQLOutput);
             });
 
             string buildCmd = "msbuild /t:rebuild /p:Configuration=" + configName + " /p:Platform=" + arch;
             await CodeQLRunner.Instance.GenerateDatabaseAsync(buildCmd, _cancelToken.Token);
             _taskCompleted.TrySetResult(true);
             return true;
-        }
-      
-        private async System.Threading.Tasks.Task StartProgressOutputAsync()
-        {
-            Trace.WriteLine("");
-            do
-            {
-                Trace.Write(".");
-                await System.Threading.Tasks.Task.Delay(1000);
-            } while(IsCodeQLTaskRunning());
         }
     }
 }
