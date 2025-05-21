@@ -22,12 +22,10 @@ namespace Microsoft.Sarif.Viewer.Views
     /// </summary>
     public partial class CodeQLInstallHelper : Window
     {
-        private int _installCLickCount = 0;
         private readonly HashSet<string> _languagePacks;
         public CodeQLInstallHelper()
         {
             _languagePacks = new HashSet<string>();
-            _installCLickCount = 0;
             Owner = Application.Current.MainWindow;
             InitializeComponent();
             DataContext = this;
@@ -44,36 +42,17 @@ namespace Microsoft.Sarif.Viewer.Views
         /// </param>
         private void ButtonInstall_Click(object sender, RoutedEventArgs e)
         {
-            if (_installCLickCount == 0)
-            {
-                _ = this.CodeQLInstallAsync();
-            }
-            else if (_installCLickCount > 0)
-            {
-                throw new CodeQLExeNotFoundException("CodeQL already installed by extension, but was not found. Please check your installation.");
-            }
-        }
-
-        private async Task CodeQLInstallAsync()
-        {
-            _installCLickCount++;
-            InstallWindow iw = new InstallWindow();
+            InstallWindow iw = new InstallWindow(version: ___TextBoxVersion_.Text,
+              path: ___TextBoxPath_.Text,
+              addToPath: AddToPathCheckBox.IsChecked ?? false,
+              _languagePacks);
             iw.Owner = this;
             iw.DataContext = this;
+            iw.backgroundWorker.RunWorkerAsync();
             iw.ShowDialog();
-            try
-            {
-                await CodeQLService.Instance.CodeQLInstallAsync(___TextBoxVersion_.Text, ___TextBoxPath_.Text, AddToPathCheckBox.IsChecked ?? false, _languagePacks);
-            }
-            catch
-            {
-                iw.Close();
-                Close();
-                throw new Exception("Error installing codeql");
-            }
-            iw.Close();
             Close();
         }
+
 
         /// <summary>
         /// Handles the event when the cancel button is clicked.

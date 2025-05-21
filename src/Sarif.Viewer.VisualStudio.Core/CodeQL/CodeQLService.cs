@@ -202,15 +202,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                 throw new Exception("Path Error", ex);
             }
 
-            try
-            {
-                new Version(version);
-            }
-            catch (FormatException)
-            {
-                throw new Exception("Incorrect Version Format");
-            }
-            catch
+            if(!Version.TryParse(version, out _))
             {
                 throw new Exception("Version Error");
             }
@@ -220,7 +212,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                 string url = "https://github.com/github/codeql-cli-binaries/releases/download/v" + version + "/codeql.zip";
                 HttpResponseMessage response = await client.GetAsync(url);
                 response.EnsureSuccessStatusCode();
-                using (FileStream fs = new FileStream(System.IO.Path.Combine(installPath, "codeql.zip"), FileMode.CreateNew))
+                using (FileStream fs = new FileStream(System.IO.Path.Combine(installPath, "codeql.zip"), FileMode.Create))
                 {
                     await response.Content.CopyToAsync(fs);
                 }

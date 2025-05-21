@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -16,12 +17,10 @@ namespace Microsoft.Sarif.Viewer.Views
     /// </summary>
     public partial class CodeQLPackInstallHelper : Window
     {
-        private int _installCLickCount = 0;
         private readonly HashSet<string> _languagePacks;
 
         public CodeQLPackInstallHelper()
         {
-            _installCLickCount = 0;
             _languagePacks = new HashSet<string>();
             Owner = Application.Current.MainWindow;
             InitializeComponent();
@@ -40,39 +39,12 @@ namespace Microsoft.Sarif.Viewer.Views
         /// </param>
         private void ButtonInstall_Click(object sender, RoutedEventArgs e)
         {
-            if (_installCLickCount == 0)
-            {
-                _ = this.InstallPacksAsync();
-            }
-            else if (_installCLickCount > 0)
-            {
-                throw new CodeQLExeNotFoundException("CodeQL already installed by extension, but was not found. Please check your installation.");
-            }
-        }
-
-        private async System.Threading.Tasks.Task InstallPacksAsync()
-        {
-            if (_installCLickCount == 0)
-            {
-                _installCLickCount++;
-                try
-                {
-                    InstallWindow iw = new InstallWindow();
-                    iw.Owner = this;
-                    iw.DataContext = this;
-                    iw.ShowDialog();
-                    await CodeQLService.Instance.CodeQLInstallPacksAsync(_languagePacks);
-                    await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
-                    iw.Close();
-                    Close();
-
-                }
-                catch (Exception ex)
-                {
-                    Close();
-                    throw new Exception(ex.ToString(), ex);
-                }
-            }
+            InstallWindow iw = new InstallWindow(_languagePacks);
+            iw.Owner = this;
+            iw.DataContext = this;
+            iw.backgroundWorker.RunWorkerAsync();
+            iw.ShowDialog();
+            Close();
         }
 
         /// <summary>

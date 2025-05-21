@@ -1,9 +1,14 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Windows;
 
+
 using Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL;
+using Microsoft.VisualStudio.Shell;
 
 namespace Microsoft.Sarif.Viewer.Views
 {
@@ -12,14 +17,51 @@ namespace Microsoft.Sarif.Viewer.Views
     /// </summary>
     public partial class InstallWindow : Window
     {
-        public InstallWindow()
+        public readonly BackgroundWorker backgroundWorker;
+        private readonly string _version;
+        private readonly string _path;
+        private readonly bool _addToPath;
+        private readonly HashSet<string> _packs;
+
+        public InstallWindow(string version, string path, bool addToPath, HashSet<string> packs)
         {
             InitializeComponent();
+            _version = version;
+            _path = path;
+            _addToPath = addToPath;
+            _packs = packs; 
+            backgroundWorker = new System.ComponentModel.BackgroundWorker();
+            this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.InstallCodeQLAndPacksBackground);
+            this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorkCompleted);
+        }
+        public InstallWindow(HashSet<string> packs)
+        {
+            _packs = packs;
+            backgroundWorker = new System.ComponentModel.BackgroundWorker();
+            this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.InstallPacksOnlyBackground);
+            this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorkCompleted);
+        }
+        private void InstallPacksOnlyBackground(object sender, DoWorkEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallPacksAsync(_packs));
+            ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
+            e.Result = true; // FIXME Probably a better way to do this
         }
 
+        private void InstallCodeQLAndPacksBackground(object sender, DoWorkEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallAsync(_version, _path, _addToPath, _packs));
+            e.Result = true;
+        }
+        private void BackgroundWorkCompleted(object sender, EventArgs e)
+        {
+            this.Close();
+        }
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)
         {
             CodeQLService.Instance.CancelIfRunning();
+            backgroundWorker.CancelAsync();
+            this.Close();
         }
     }
 }
