@@ -53,7 +53,6 @@ namespace Microsoft.Sarif.Viewer.Views
         {
             ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallAsync(_version, _path, _addToPath, _packs));
             ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
-
             e.Result = true;
         }
         private void BackgroundWorkCompleted(object sender, EventArgs e)
