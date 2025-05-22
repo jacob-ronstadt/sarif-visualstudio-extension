@@ -135,6 +135,12 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 
         private void MenuItemCallback(object sender, EventArgs e)
         {
+            if (!CodeQLService.CodeQLIsInstalled())
+            {
+                CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                codeQLInstallHelper.ShowDialog();
+            }
+          
             this.MenuItemCallbackAsync(sender, e).FileAndForget("Microsoft/SARIF/Viewer/CodeQL/Failed"); // FIXME
         }
 
@@ -147,15 +153,14 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
         /// <param name="e">Event args.</param>
         private async System.Threading.Tasks.Task MenuItemCallbackAsync(object sender, EventArgs e)
         {
-            if (!CodeQLService.CodeQLIsInstalled())
+          
+            if ((await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0)
             {
-                await ((AsyncPackage)this.package).JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                    codeQLInstallHelper.ShowDialog();
-                });
+                CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
+                codeQLInstallHelper.ShowDialog();
+                await CodeqlRefreshAvailableQueriesAsync();
             }
+
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             var menuCommand = (OleMenuCommand)sender;
@@ -286,8 +291,9 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     if (_discoveredComboChoices == null)
                     {
                         _discoveredComboChoices = CodeQLService.Instance.AvailableQueries.ToArray();
-                        Trace.WriteLine("No queries found. Please install CodeQL packs and/or refresh");
-                        throw new Exception("No queries found");
+                       
+                        _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () => await CodeqlRefreshAvailableQueriesAsync());
+
                     }
                     Marshal.GetNativeVariantForObject(_discoveredComboChoices, vOut);
                 }

@@ -24,7 +24,7 @@ using Microsoft.VisualStudio.Threading;
 
 namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 {
-    internal class CodeQLService
+    internal class CodeQLService : IDisposable
     {
         private static CodeQLService _instance = null;
         private CancellationTokenSource _cancelToken;
@@ -34,11 +34,28 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
         { 
             get 
             {
-                return _queryDict.Keys.ToList();
+                if (_queryDict != null)
+                {
+                    return _queryDict.Keys.ToList();
+                }
+                return new List<string>();
             }
             set { }
         }
 
+        public void Dispose()
+        {
+            if (_taskCompleted != null)
+            {
+                _taskCompleted.TrySetResult(true);
+                _taskCompleted = null;
+            }
+            if (_cancelToken != null)
+            {
+                _cancelToken.Dispose();
+                _cancelToken = null;
+            }
+        }
         /// <summary>
         /// Gets the instance of the service.
         /// </summary>
