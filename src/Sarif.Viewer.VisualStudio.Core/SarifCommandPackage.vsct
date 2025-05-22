@@ -289,12 +289,8 @@
 	  </Bitmaps>
   </Commands>
 	
-	<VisibilityConstraints>
-		<VisibilityItem guid="guidCodeQLCmdSet" id="CodeQLToolbar" context="UICONTEXT_NoSolution"/>
-		<VisibilityItem guid="guidCodeQLCmdSet" id="CodeQLToolbar" context="UICONTEXT_SolutionExists"/>
-	</VisibilityConstraints>
 
-		<Symbols>
+  <Symbols>
     <!-- This is the package guid. -->
     <GuidSymbol name="guidOpenSarifFileCommandPackage" value="{b97edb99-282e-444c-8f53-7de237f2ec5e}" />
 

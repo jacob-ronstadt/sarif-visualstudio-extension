@@ -191,12 +191,12 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             return _queryDict.Keys.ToArray();
         }
 
-        public async Task CodeQLInstallPacksAsync(HashSet<string> packs)
+        public async System.Threading.Tasks.Task CodeQLInstallPacksAsync(HashSet<string> packs)
         {
             await CodeQLRunner.Instance.InstallDefaultPacksAsync(packs);
         }
 
-        public async Task CodeQLInstallAsync(string version, string installPath, bool addToPath, HashSet<string> packs)
+        public async System.Threading.Tasks.Task CodeQLInstallAsync(string version, string installPath, bool addToPath, HashSet<string> packs)
         {
             if (string.IsNullOrEmpty(installPath))
             {

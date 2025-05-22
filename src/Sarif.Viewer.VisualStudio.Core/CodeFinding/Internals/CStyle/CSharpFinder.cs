@@ -44,7 +44,7 @@ namespace Microsoft.Sarif.Viewer.CodeFinding.Internal.CStyle
             //  "Namespace::Class.Method"
             //  "Namespace1::Namespace2::Namespace3::Class.Method"
             //  "Namespace::Class+_IEnumerableMethod_d__24.MoveNext"
-            //  "Namespace.CodeQLCommands+Class2..ctor"
+            //  "Namespace.Class1+Class2..ctor"
             // Thus we split the function signature on "::", ".", and "+".
             string[] parts = functionSignature.Split(new string[] { "::", ".", "+" }, StringSplitOptions.RemoveEmptyEntries);
 
