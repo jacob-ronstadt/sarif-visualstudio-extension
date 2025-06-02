@@ -24,15 +24,17 @@ namespace Microsoft.Sarif.Viewer.Views
         private readonly string _version;
         private readonly string _path;
         private readonly bool _addToPath;
+        private readonly bool _prerelease;
         private readonly HashSet<string> _packs;
 
-        public InstallWindow(string version, string path, bool addToPath, HashSet<string> packs)
+        public InstallWindow(string version, string path, bool addToPath, HashSet<string> packs, bool prerelease)
         {
             InitializeComponent();
             _version = version;
             _path = path;
             _addToPath = addToPath;
             _packs = packs; 
+            _prerelease = prerelease;
             backgroundWorker = new System.ComponentModel.BackgroundWorker();
             this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.InstallCodeQLAndPacksBackground);
             this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWorkCompleted);
@@ -49,7 +51,7 @@ namespace Microsoft.Sarif.Viewer.Views
         {
             try
             {
-                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallPacksAsync(_packs));
+                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallPacksAsync(_packs, _prerelease));
                 ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
                 e.Result = true; // FIXME Probably a better way to do this
             }
@@ -64,7 +66,7 @@ namespace Microsoft.Sarif.Viewer.Views
         {
             try
             {
-                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallAsync(_version, _path, _addToPath, _packs));
+                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallAsync(_version, _path, _addToPath, _packs, _prerelease));
                 ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
                 e.Result = true;
             }

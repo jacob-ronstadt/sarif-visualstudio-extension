@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Exceptions;
 
@@ -193,9 +194,12 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <param name="pack">The CodeQL pack to install.</param>
         /// <param name="version">The version of the CodeQL pack to install.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task InstallPackAsync(string pack, bool forceInstall = false)
+        public async Task InstallPackAsync(string pack, bool prerelease, bool forceInstall = false)
         {
-            string output = await RunCodeQLProcAsync("pack download " + pack + (forceInstall ? " --force" : "") + " -v");
+            string output = await RunCodeQLProcAsync("pack download " + pack + 
+                (forceInstall ? " --force" : "") + 
+                (prerelease ? " --allow-prerelease" : "") + 
+                " -v");
             foreach (string line in output.Split(
                                new string[] { "\r\n", "\r", "\n" },
                                StringSplitOptions.None))
@@ -227,13 +231,13 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// </summary>
         /// <returns></returns>
         /// <exception cref="CodeQLPacksNotFoundException"></exception>
-        public async Task InstallDefaultPacksAsync(HashSet<string> packs)
+        public async Task InstallDefaultPacksAsync(HashSet<string> packs, bool prerelease )
         {
             foreach (string pack in EnumerateDefaultPacks(packs))
             {
                 try
                 {
-                    await InstallPackAsync(pack);
+                    await InstallPackAsync(pack, prerelease);
                 }
                 catch (Exception ex)
                 {

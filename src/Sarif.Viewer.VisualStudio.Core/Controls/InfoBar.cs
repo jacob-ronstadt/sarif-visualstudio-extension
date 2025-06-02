@@ -123,7 +123,7 @@ namespace Microsoft.Sarif.Viewer.Controls
         /// Initializes a new instance of the <see cref="InfoBar"/> class.
         /// </summary>
         /// <param name="content">
-        /// The content to dislay.
+        /// The content to display.
         /// </param>
         /// <param name="clickAction">
         /// An action to take when a user clicks on an <see cref="IVsInfoBarActionItem"/> (e.g. button) in the info bar.
@@ -152,7 +152,7 @@ namespace Microsoft.Sarif.Viewer.Controls
             {
                 // It wasn't visible before, but it is now.
 
-                this.infoBarModel = new InfoBarModel(this.content, this.imageMoniker, isCloseButtonVisible: true);
+                this.info   BarModel = new InfoBarModel(this.content, this.imageMoniker, isCloseButtonVisible: true);
 
                 if (!(ServiceProvider.GlobalProvider.GetService(typeof(SVsShell)) is IVsShell shell)
                     || shell.GetProperty((int)__VSSPROPID7.VSSPROPID_MainWindowInfoBarHost, out object infoBarHostObj) != VSConstants.S_OK

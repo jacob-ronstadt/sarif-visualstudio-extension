@@ -23,6 +23,7 @@ namespace Microsoft.Sarif.Viewer.Views
     public partial class CodeQLInstallHelper : Window
     {
         private readonly HashSet<string> _languagePacks;
+
         public CodeQLInstallHelper()
         {
             _languagePacks = new HashSet<string>();
@@ -45,7 +46,8 @@ namespace Microsoft.Sarif.Viewer.Views
             InstallWindow iw = new InstallWindow(version: ___TextBoxVersion_.Text,
               path: ___TextBoxPath_.Text,
               addToPath: AddToPathCheckBox.IsChecked ?? false,
-              _languagePacks);
+              _languagePacks,
+              PreReleaseCheckBox.IsChecked ?? false);
             iw.Owner = this;
             iw.DataContext = this;
             iw.backgroundWorker.RunWorkerAsync();
@@ -92,6 +94,7 @@ namespace Microsoft.Sarif.Viewer.Views
         }
         private async Task SetVersionCheckBoxTextAsync()
         {
+            ___TextBoxVersion_.IsEnabled = !UseLatestCheckBox.IsChecked ?? true;
             ___TextBoxVersion_.Text = await GetLatestVersionAsync();
         }
 
@@ -105,6 +108,10 @@ namespace Microsoft.Sarif.Viewer.Views
             if (_languagePacks.Count > 0 && Version.TryParse(___TextBoxVersion_.Text, out _))
             {
                 buttonInstall.IsEnabled = true;
+            }
+            else
+            {
+                buttonInstall.IsEnabled = false;
             }
         }
 
@@ -122,6 +129,10 @@ namespace Microsoft.Sarif.Viewer.Views
             if(_languagePacks.Count > 0 && !string.IsNullOrEmpty(___TextBoxVersion_.Text))
             {
                 buttonInstall.IsEnabled = true;
+            }
+            else
+            {
+                buttonInstall.IsEnabled = false;
             }
         }
     }

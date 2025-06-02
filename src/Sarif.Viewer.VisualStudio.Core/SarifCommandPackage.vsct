@@ -249,6 +249,17 @@
 		    </Strings>
 	    </Button>
 		
+		<Button guid="guidCodeQLCmdSet" id="cmdidInstallPacksCommand" priority="0x0122" type="Button">
+			<Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup"/>
+			<Icon guid="IconRefresh" id="IconRefresh16" />
+			<Strings>
+				<CommandName>cmdidInstallPacksCommand</CommandName>
+				<ButtonText>Download Additional CodeQL Packs</ButtonText>
+				<MenuText>Download Additional CodeQL Packs</MenuText>
+				<ToolTipText>Download Additional CodeQL Packs</ToolTipText>
+			</Strings>
+		</Button>
+		
 	  <!-- Add to toolbar -->
 	    <Button guid="guidCodeQLCmdSet" id="cmdidCodeQLAnalyzeCommand" priority="0x0001" type="Button">
 		    <Parent guid="guidCodeQLCmdSet" id="CodeQLToolbarGroup" />
@@ -288,8 +299,11 @@
   		  <Bitmap guid="CodeQLCommonPackageImages" href="Icons\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
 	  </Bitmaps>
   </Commands>
-	
 
+  <VisibilityConstraints>
+		<VisibilityItem guid="guidCodeQLCmdSet" id="CodeQLToolbar" context="UICONTEXT_SolutionExists"/>
+  </VisibilityConstraints>
+	
   <Symbols>
     <!-- This is the package guid. -->
     <GuidSymbol name="guidOpenSarifFileCommandPackage" value="{b97edb99-282e-444c-8f53-7de237f2ec5e}" />
@@ -352,6 +366,7 @@
 		  <IDSymbol name="cmdidCodeQLAnalyzeCommand" value="0x0100" />
 		  <IDSymbol name="cmdidCodeQLStopCommand" value="0x0110" />
 		  <IDSymbol name="cmdiCodeQLLoadQueriesCommand" value="0x0111" />
+		  <IDSymbol name="cmdidInstallPacksCommand" value="0x0112" />
 		  <IDSymbol name="cmdidCodeQLDatabaseCommand" value="0x133"/>
 		  <IDSymbol name="cmidCodeQLCombo" value="0x155"/>
 		  <IDSymbol name="cmdidComboGetList" value="0x156"/>

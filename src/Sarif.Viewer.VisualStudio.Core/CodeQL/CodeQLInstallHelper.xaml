@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Microsoft.Sarif.Viewer.Views"
         mc:Ignorable="d"
-        Title="CodeQL Not Found" Height="340" Width="506" WindowStyle="ToolWindow" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen">
+        Title="CodeQL Not Found" Height="416" Width="520" WindowStyle="ToolWindow" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen">
     <Grid HorizontalAlignment="Center" Width="438" Margin="0,10,0,-6">
         <TextBlock
                 TextWrapping="Wrap" HorizontalAlignment="Right" Width="390" Height="65" VerticalAlignment="Top" Margin="0,10,37,0" 
@@ -15,8 +15,8 @@
                 VerticalAlignment="Bottom" Height="23"  Content="Install CodeQL" Margin="0,0,99,24" HorizontalAlignment="Right" Width="106" />
         <Button Name="buttonCancel" Click="ButtonCancel_Click" 
             VerticalAlignment="Bottom" Height="23" Content="Cancel" Margin="0,0,10,24" HorizontalAlignment="Right" Width="74" />
-        <TextBox x:Name="___TextBoxPath_" HorizontalAlignment="Right" Margin="0,102,102,0" TextWrapping="Wrap" Text="C:\codeql-home\" VerticalAlignment="Top" Width="253" Height="24"/>
-        <TextBox x:Name="___TextBoxVersion_" HorizontalAlignment="Left" Margin="82,130,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="76" Height="23" TextChanged="TextBoxVersion_TextChanged"/>
+        <TextBox x:Name="___TextBoxPath_" HorizontalAlignment="Right" Margin="0,102,219,0" TextWrapping="Wrap" Text="C:\codeql-home\" VerticalAlignment="Top" Width="136" Height="24"/>
+        <TextBox x:Name="___TextBoxVersion_" HorizontalAlignment="Left" Margin="82,130,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="137" Height="23" TextChanged="TextBoxVersion_TextChanged"/>
         <TextBlock
             TextWrapping="Wrap" HorizontalAlignment="Right" Width="67" Height="16" VerticalAlignment="Top" Margin="0,106,360,0" 
                 Text="Install Path:" 
@@ -25,21 +25,28 @@
             TextWrapping="Wrap" Margin="0,134,383,0" 
             Text="Version:" HorizontalAlignment="Right" Width="44" Height="19" VerticalAlignment="Top" 
                 />
-        <CheckBox x:Name="AddToPathCheckBox" Content="Add to PATH" HorizontalAlignment="Left" Margin="340,106,0,0" VerticalAlignment="Top"/>
-        <CheckBox Content="Use Latest" HorizontalAlignment="Left" Margin="163,135,0,0" VerticalAlignment="Top" Checked="UseLatest_Checked"/>
-        <TextBlock
-            TextWrapping="Wrap" Margin="10,167,0,0" 
-            HorizontalAlignment="Left" Width="98" Height="29" VerticalAlignment="Top" 
-                ><Run Text="Language packs:"/><LineBreak/><Run/></TextBlock>
-        <CheckBox x:Name="cppCheckBox" Content="C++" HorizontalAlignment="Left" Margin="112,167,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="csharpCheckBox" Content="C#" HorizontalAlignment="Left" Margin="112,187,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="goCheckBox" Content="Go" HorizontalAlignment="Left" Margin="112,207,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="javaCheckBox" Content="Java" HorizontalAlignment="Left" Margin="112,227,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="jsCheckBox" Content="JavaScript" HorizontalAlignment="Left" Margin="200,167,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="pythohCheckBox" Content="Python" HorizontalAlignment="Left" Margin="200,187,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="rubyCheckBox" Content="Ruby" HorizontalAlignment="Left" Margin="200,207,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="swiftCheckBox" Content="Swift" HorizontalAlignment="Left" Margin="200,227,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
-        <CheckBox x:Name="windowsDrivers" Content="Windows Drivers" HorizontalAlignment="Left" Margin="308,167,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked"/>
+        <CheckBox x:Name="AddToPathCheckBox" Content="Add to PATH" HorizontalAlignment="Left" Margin="233,106,0,0" VerticalAlignment="Top"/>
+        <CheckBox x:Name="UseLatestCheckBox" Content="Use Latest" HorizontalAlignment="Left" Margin="233,136,0,0" VerticalAlignment="Top" Checked="UseLatest_Checked"/>
+        <CheckBox x:Name="PreReleaseCheckBox" Content="Allow Prerelease Versions" HorizontalAlignment="Left" Margin="233,163,0,0" VerticalAlignment="Top" Width="161" Height="17"/>
+
+        <Expander HorizontalAlignment="Left" Height="191" Header="Language Packs" Margin="10,158,0,0" VerticalAlignment="Top" Width="220">
+            <Grid Background="#FFE5E5E5" Width="220">
+                <CheckBox x:Name="cppCheckBox" Content="C++" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="LanguagePack_Checked" Unchecked="LanguagePack_Checked" Margin="3,10,0,0" Height="15" Width="44" />
+                <CheckBox x:Name="csharpCheckBox" Content="C#" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="LanguagePack_Checked" Unchecked="LanguagePack_Checked" Margin="3,30,0,0" Height="15" Width="34"/>
+                <CheckBox x:Name="swiftCheckBox" Content="Swift" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="LanguagePack_Checked" Unchecked="LanguagePack_Checked" Margin="3,50,0,0" Height="15" Width="46"/>
+                <CheckBox x:Name="jsCheckBox" Content="JavaScript" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="LanguagePack_Checked" Unchecked="LanguagePack_Checked" Margin="3,70,0,0" Height="15" Width="72"/>
+                <CheckBox x:Name="pythohCheckBox" Content="Python" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="LanguagePack_Checked" Unchecked="LanguagePack_Checked" Margin="3,90,0,0" Height="15" Width="57"/>
+                <CheckBox x:Name="rubyCheckBox" Content="Ruby" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="LanguagePack_Checked" Unchecked="LanguagePack_Checked" Margin="3,110,0,0" Height="15" Width="47"/>
+                <CheckBox x:Name="javaCheckBox" Content="Java" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="LanguagePack_Checked" Unchecked="LanguagePack_Checked" Margin="3,130,0,0" Height="15" Width="42"/>
+                <CheckBox x:Name="goCheckBox" Content="Go" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="LanguagePack_Checked" Unchecked="LanguagePack_Checked" Margin="3,150,0,0" Height="15" Width="35"/>
+                <CheckBox x:Name="windowsDrivers" Content="Windows Drivers" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="LanguagePack_Checked" Unchecked="LanguagePack_Checked" Margin="3,10,0,0" Grid.Column="1" Height="15" Width="109"/>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" MinWidth="100"/>
+                    <ColumnDefinition Width="Auto" MinWidth="112"/>
+                </Grid.ColumnDefinitions>
+            </Grid>
+        </Expander>
 
     </Grid>
 </Window>

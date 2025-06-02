@@ -12,6 +12,7 @@ using System.Threading;
 using EnvDTE80;
 
 using Microsoft.CodeAnalysis.Sarif;
+using Microsoft.Sarif.Viewer.Controls;
 using Microsoft.Sarif.Viewer.ErrorList;
 using Microsoft.Sarif.Viewer.FileMonitor;
 using Microsoft.Sarif.Viewer.Options;
@@ -52,6 +53,7 @@ namespace Microsoft.Sarif.Viewer
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideOptionPage(typeof(SarifViewerGeneralOptionsPage), OptionCategoryName, OptionPageName, 0, 0, true)]
     [ProvideOptionPage(typeof(SarifViewerColorOptionsPage), OptionCategoryName, ColorsPageName, 0, 0, true)]
+    // TODO add codeql options page
     public sealed class SarifViewerPackage : AsyncPackage
     {
         private readonly List<OleMenuCommand> menuCommands = new List<OleMenuCommand>();
@@ -69,6 +71,11 @@ namespace Microsoft.Sarif.Viewer
         public const string OptionPageName = "General";
         public const string ColorsPageName = "Colors";
         public const string OutputPaneName = "SARIF Viewer";
+
+        public const string CodeQLOptionCategoryName = "CodeQL";
+        public const string CodeQLOptionPageName = "General";
+
+
         public static readonly Guid PackageGuid = new Guid(PackageGuidString);
 
         public static bool IsUnitTesting { get; set; } = false;
@@ -155,7 +162,7 @@ namespace Microsoft.Sarif.Viewer
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            // initialize Option first since other componments may depends on options.
+            // initialize Option first since other components may depends on options.
             await SarifViewerGeneralOptions.InitializeAsync(this).ConfigureAwait(false);
             await SarifViewerColorOptions.InitializeAsync(this).ConfigureAwait(false);
 
@@ -179,23 +186,12 @@ namespace Microsoft.Sarif.Viewer
 
             if (await this.IsSolutionLoadedAsync())
             {
-                // Async package initilized after solution is fully loaded according to
+                // Async package initialized after solution is fully loaded according to
                 // [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
-                // SolutionEvents.OnAfterBackgroundSolutionLoadComplete will not by triggered until the user opens another solution.
+                // SolutionEvents.OnAfterBackgroundSolutionLoadComplete will not be triggered until the user opens another solution.
                 // Need to manually start monitor in this case.
                 this.sarifFolderMonitor?.StartWatching();
-
-                if (!CodeQLService.CodeQLIsInstalled())
-                {
-                    CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                    codeQLInstallHelper.ShowDialog();
-                }
-                else if ((await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0)
-                {
-                    CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
-                    codeQLInstallHelper.ShowDialog();
-                }
-                await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
+                await CheckForCodeQLAsync();
             }
 
             SolutionEvents.OnBeforeCloseSolution += this.SolutionEvents_OnBeforeCloseSolution;
@@ -324,21 +320,7 @@ namespace Microsoft.Sarif.Viewer
             this.JoinableTaskFactory.Run(async () => await InitializeResultSourceHostAsync());
 
             // check codeql is installed and there are available packs
-            if (!CodeQLService.CodeQLIsInstalled())
-            {
-                CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                codeQLInstallHelper.ShowDialog();
-            }
-            else
-            {
-                bool noPacks = this.JoinableTaskFactory.Run(async () => await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0;
-                if (noPacks)
-                {
-                    CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
-                    codeQLInstallHelper.ShowDialog();
-                }
-                this.JoinableTaskFactory.Run(async () => await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
-            }
+            this.JoinableTaskFactory.Run(async () => await CheckForCodeQLAsync());
         }
 
         /// <summary>
@@ -429,6 +411,55 @@ namespace Microsoft.Sarif.Viewer
 
                     break;
             }
+        }
+
+        private static bool infoBarShown = false;
+
+        private static async Task CheckForCodeQLAsync()
+        {
+            if (!CodeQLService.CodeQLIsInstalled())
+            {
+                var infoBar = new InfoBar(
+                    content: new[]
+                    {
+                            new InfoBarTextSpan("CodeQL not installed. "),
+                            new InfoBarButton("Click Here To Install CodeQL"),
+                    },
+                    (actionItem) =>
+                    {
+                        CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                        codeQLInstallHelper.ShowDialog();
+                    },
+                    null,
+                    default);
+                if (!infoBarShown)
+                {
+                    await infoBar.ShowAsync();
+                    infoBarShown = true;
+                }
+            }
+            else if ((await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0)
+            {
+                var infoBar = new InfoBar(
+                   content: new[]
+                   {
+                            new InfoBarTextSpan("No CodeQL Packs Found. "),
+                            new InfoBarButton("Click Here To Install CodeQL Packs"),
+                   },
+                   (actionItem) =>
+                   {
+                       CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                       codeQLInstallHelper.ShowDialog();
+                   },
+                   null,
+                   default);
+                if (!infoBarShown)
+                {
+                    await infoBar.ShowAsync();
+                    infoBarShown = true;
+                }
+            }
+            await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
         }
 
         private static string GetSolutionDirectoryPath()

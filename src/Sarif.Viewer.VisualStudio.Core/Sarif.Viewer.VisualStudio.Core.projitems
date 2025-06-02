@@ -129,6 +129,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)OpenLogFileCommands.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\ColorOption.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\ISarifViewerColorOptions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Options\ICodeQLGeneralOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\ISarifViewerGeneralOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\LocationTextDecoration.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\LocationTextDecorationCollection.cs" />

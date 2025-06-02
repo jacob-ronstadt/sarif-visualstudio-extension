@@ -191,12 +191,12 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             return _queryDict.Keys.ToArray();
         }
 
-        public async System.Threading.Tasks.Task CodeQLInstallPacksAsync(HashSet<string> packs)
+        public async System.Threading.Tasks.Task CodeQLInstallPacksAsync(HashSet<string> packs, bool prerelease)
         {
-            await CodeQLRunner.Instance.InstallDefaultPacksAsync(packs);
+            await CodeQLRunner.Instance.InstallDefaultPacksAsync(packs, prerelease);
         }
 
-        public async System.Threading.Tasks.Task CodeQLInstallAsync(string version, string installPath, bool addToPath, HashSet<string> packs)
+        public async System.Threading.Tasks.Task CodeQLInstallAsync(string version, string installPath, bool addToPath, HashSet<string> packs, bool preReleasePacks)
         {
             if (string.IsNullOrEmpty(installPath))
             {
@@ -223,7 +223,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             }
             System.IO.Compression.ZipFile.ExtractToDirectory(System.IO.Path.Combine(installPath, "codeql.zip"), installPath);
 
-            await CodeQLInstallPacksAsync(packs);
+            await CodeQLInstallPacksAsync(packs, preReleasePacks);
 
             await CodeQLFindAvailableQueriesAsync();
             if (addToPath)

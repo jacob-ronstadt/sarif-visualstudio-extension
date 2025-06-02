@@ -184,11 +184,11 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     {
                         dbSuccessful = await CodeQLService.Instance.CodeQLGenerateDatabaseAsync();
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         CodeQLService.Instance.ClearTask();
                         VsShellUtilities.ShowMessageBox(Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider,
-                                                        $"CodeQL database create failed with exception {ex.ToString()}",
+                                                        $"CodeQL database create failed. See output for details.",
                                                         null, // title
                                                         OLEMSGICON.OLEMSGICON_CRITICAL,
                                                         OLEMSGBUTTON.OLEMSGBUTTON_OK,
@@ -204,11 +204,11 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                         {
                             await CodeQLService.Instance.CodeQLRunQuerySetAsync(_currentDropDownComboChoice.Trim().ToLower());
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             CodeQLService.Instance.ClearTask();
                             VsShellUtilities.ShowMessageBox(Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider,
-                                                            $"CodeQL analysis failed with exception {ex.ToString()}",
+                                                            $"CodeQL analysis failed. See output for details.",
                                                             null, // title
                                                             OLEMSGICON.OLEMSGICON_CRITICAL,
                                                             OLEMSGBUTTON.OLEMSGBUTTON_OK,
@@ -310,11 +310,13 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 
         public async System.Threading.Tasks.Task CodeqlRefreshAvailableQueriesAsync()
         {
-            _discoveredComboChoices = await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync();
-
-            if (_discoveredComboChoices != null && _discoveredComboChoices.Length != 0)
+            if (CodeQLService.CodeQLIsInstalled())
             {
-                _currentDropDownComboChoice = _discoveredComboChoices[0];
+                _discoveredComboChoices = await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync();
+                if (_discoveredComboChoices != null && _discoveredComboChoices.Length != 0)
+                {
+                    _currentDropDownComboChoice = _discoveredComboChoices[0];
+                }
             }
         }
     }
