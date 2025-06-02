@@ -152,7 +152,7 @@ namespace Microsoft.Sarif.Viewer.Controls
             {
                 // It wasn't visible before, but it is now.
 
-                this.info   BarModel = new InfoBarModel(this.content, this.imageMoniker, isCloseButtonVisible: true);
+                this.infoBarModel = new InfoBarModel(this.content, this.imageMoniker, isCloseButtonVisible: true);
 
                 if (!(ServiceProvider.GlobalProvider.GetService(typeof(SVsShell)) is IVsShell shell)
                     || shell.GetProperty((int)__VSSPROPID7.VSSPROPID_MainWindowInfoBarHost, out object infoBarHostObj) != VSConstants.S_OK
