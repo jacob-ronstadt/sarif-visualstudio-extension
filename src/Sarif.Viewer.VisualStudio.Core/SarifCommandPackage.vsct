@@ -53,16 +53,17 @@
       </Menu>
 
       <!-- CodeQL -->
-      <Menu guid="guidCodeQLCmdSet" id="CodeQLMenu" priority="0x700" type="Menu">
-            <Parent guid="guidCodeQLCmdSet" id="CodeQLGroup"/>
+      <Menu guid="guidCodeQLCmdSet" id="CodeQLSubMenu" priority="0x700" type="Menu">
+            <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup"/>
             <CommandFlag>AlwaysCreate</CommandFlag>
             <CommandFlag>DynamicVisibility</CommandFlag>
             <Strings>
               <ButtonText>CodeQ&amp;L</ButtonText>
+              <CommandName>CodeQ&amp;L</CommandName>
             </Strings>
       </Menu>
-
-      <Menu guid="guidCodeQLCmdSet" id="CodeQLToolbar" type="Toolbar" priority="0x0100">
+		
+		<Menu guid="guidCodeQLCmdSet" id="CodeQLToolbar" type="Toolbar" priority="0x0100">
         <CommandFlag>AlwaysCreate</CommandFlag>
 	    <CommandFlag>DynamicVisibility</CommandFlag>
 		  <Strings>
@@ -73,6 +74,7 @@
         </Strings>
       </Menu>
 
+		
 	</Menus>
 
 
@@ -103,8 +105,11 @@
       </Group>
 
       <!-- CodeQL -->
-      <Group guid="guidCodeQLCmdSet" id="CodeQLMenuGroup" priority="0x0600">
-        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
+      <Group guid="guidCodeQLCmdSet" id="CodeQLSubMenuGroup" priority="0x0600">
+        <Parent guid="guidCodeQLCmdSet" id="CodeQLSubMenu" />
+	  </Group>
+	  <Group guid="guidCodeQLCmdSet" id="CodeQLMenuGroup" priority="0x0600">
+		 <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
 	  </Group>
 	  <Group guid="guidCodeQLCmdSet" id="CodeQLToolbarGroup"  priority="0x0000">
 		 <Parent guid="guidCodeQLCmdSet" id="CodeQLToolbar"/>
@@ -217,8 +222,8 @@
 	<!-- Add to menu -->
 
 	    <Button guid="guidCodeQLCmdSet" id="cmdidCodeQLAnalyzeCommand" priority="0x0101" type="Button">
-	        <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup" />
-	        <Icon guid="CodeQLIcons" id="CodeQLIconAnalyze" />
+			<Parent guid="guidCodeQLCmdSet" id="CodeQLSubMenuGroup" />
+			<Icon guid="CodeQLIcons" id="CodeQLIconAnalyze" />
 	        <Strings>
 		        <CommandName>cmdidCodeQLAnalyzeCommand</CommandName>
 		        <ButtonText>Run Selected CodeQL Queries</ButtonText>
@@ -228,8 +233,8 @@
 	    </Button>
      
 	    <Button guid="guidCodeQLCmdSet" id="cmdiCodeQLLoadQueriesCommand" priority="0x0122" type="Button">
-		    <Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup"/>
-		    <Icon guid="IconRefresh" id="IconRefresh16" />
+			<Parent guid="guidCodeQLCmdSet" id="CodeQLSubMenuGroup" />
+			<Icon guid="IconRefresh" id="IconRefresh16" />
 		    <Strings>
 			    <CommandName>cmdiCodeQLLoadQueriesCommand</CommandName>
 			    <ButtonText>Refresh Available Queries</ButtonText>
@@ -239,7 +244,7 @@
 	    </Button>
 		
 		<Button guid="guidCodeQLCmdSet" id="cmdidInstallPacksCommand" priority="0x0123" type="Button">
-			<Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup"/>
+			<Parent guid="guidCodeQLCmdSet" id="CodeQLSubMenuGroup" />
 			<Icon guid="IconGear" id="IconGear16" />
 			<Strings>
 				<CommandName>cmdidInstallPacksCommand</CommandName>
@@ -250,7 +255,7 @@
 		</Button>
 		
 		<Button guid="guidCodeQLCmdSet" id="cmdidCodeQLStopCommand" priority="0x0133" type="Button">
-			<Parent guid="guidCodeQLCmdSet" id="CodeQLMenuGroup"/>
+			<Parent guid="guidCodeQLCmdSet" id="CodeQLSubMenuGroup" />
 			<Icon guid="CodeQLIcons" id="CodeQLIconTrash" />
 			<Strings>
 				<CommandName>cmdidCodeQLStopCommand</CommandName>
@@ -351,9 +356,9 @@
 
 	  <!-- This is the guid used to group the menu commands together -->
 	  <GuidSymbol name="guidCodeQLCmdSet" value="{4fc96981-3ec2-43c7-acf0-96d73b1203e8}">
-		  <IDSymbol name="CodeQLMenuGroup" value="0x0001" />
-		  <IDSymbol name="CodeQLMenu" value="0x1021" />
-		  <IDSymbol name="CodeQLGroup" value="0x1023"/>
+		  <IDSymbol name="CodeQLSubMenu" value="0x1101"/>
+		  <IDSymbol name="CodeQLSubMenuGroup" value="0x1110"/>
+		  <IDSymbol name="CodeQLMenuGroup" value="0x1111" />
 		  <IDSymbol name="CodeQLToolbar" value="0x000E" />
 		  <IDSymbol name="CodeQLToolbarGroup" value="0x1000" />
 		  <IDSymbol name="cmdidCodeQLAnalyzeCommand" value="0x0100" />
