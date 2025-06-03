@@ -81,5 +81,10 @@ namespace Microsoft.Sarif.Viewer.Views
                 buttonInstall.IsEnabled = false;
             }
         }
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
+        }
     }
 }

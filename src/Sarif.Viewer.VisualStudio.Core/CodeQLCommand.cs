@@ -38,6 +38,11 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
         public const int CodeQLLoadQueriesCommandId = 0x0111;
 
         /// <summary>
+        /// Command ID for CodeQL install packs.
+        /// </summary>
+        public const int CodeQLInstallerCommandID = 0x0112;
+
+        /// <summary>
         /// Command ID for CodeQL database create.
         /// </summary>
         public const int CodeQLDatabaseCommandId = 0x133;
@@ -97,6 +102,11 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     new CommandID(CommandSet, CodeQLLoadQueriesCommandId));
                 commandService.AddCommand(oleCommand);
 
+                oleCommand = new OleMenuCommand(
+                    this.MenuItemCallback,
+                    new CommandID(CommandSet, CodeQLInstallerCommandID));
+                commandService.AddCommand(oleCommand);
+
                 // Combo box
                 oleCommand = new OleMenuCommand(
                     new EventHandler(this.OnMenuMyDropDownCombo),
@@ -154,18 +164,15 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
         private async System.Threading.Tasks.Task MenuItemCallbackAsync(object sender, EventArgs e)
         {
           
-            if ((await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0)
-            {
-                CodeQLPackInstallHelper codeQLInstallHelper = new CodeQLPackInstallHelper();
-                codeQLInstallHelper.ShowDialog();
-                await CodeqlRefreshAvailableQueriesAsync();
-            }
-
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             var menuCommand = (OleMenuCommand)sender;
             switch (menuCommand.CommandID.ID)
             {
+                case CodeQLInstallerCommandID:
+                    CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                    codeQLInstallHelper.ShowDialog();
+                    break;
                 case CodeQLAnalyzeCommandId:
                     bool dbSuccessful = false;
                   

@@ -12,7 +12,7 @@
             <ColumnDefinition Width="220*"/>
         </Grid.ColumnDefinitions>
         <Button Name="buttonInstall" Click="ButtonInstall_Click" IsEnabled="False"
-                VerticalAlignment="Bottom" Height="23"  Content="Install" Margin="0,0,118,10" HorizontalAlignment="Right" Width="106" Grid.ColumnSpan="2" />
+                VerticalAlignment="Bottom" Height="23"  Content="Install" Margin="0,0,155,10" HorizontalAlignment="Right" Width="74" Grid.ColumnSpan="2" />
         <Button Name="buttonCancel" Click="ButtonCancel_Click" 
             VerticalAlignment="Bottom" Height="23" Content="Cancel" Margin="0,0,10,10" HorizontalAlignment="Right" Width="74" Grid.Column="1" />
         <CheckBox x:Name="windowsDrivers" Content="Windows Drivers" HorizontalAlignment="Left" Margin="10,201,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
@@ -24,7 +24,9 @@
         <CheckBox x:Name="pythohCheckBox" Content="Python" HorizontalAlignment="Left" Margin="10,121,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
         <CheckBox x:Name="rubyCheckBox" Content="Ruby" HorizontalAlignment="Left" Margin="10,141,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
         <CheckBox x:Name="swiftCheckBox" Content="Swift" HorizontalAlignment="Left" Margin="10,181,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
-        <TextBlock HorizontalAlignment="Left" Margin="9,0,0,0" TextWrapping="Wrap" Text="No CodeQL packs found. Please select default packs to install" VerticalAlignment="Top" Height="34" Width="218" Grid.ColumnSpan="2"/>
+        <CheckBox x:Name="otherCheckBox" Content="" HorizontalAlignment="Left" Margin="10,221,0,0" VerticalAlignment="Top" Checked="LanguagePack_Checked" Grid.ColumnSpan="2"/>
+        <TextBlock HorizontalAlignment="Left" Margin="9,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="20" Width="218" Grid.ColumnSpan="2"><Run FontWeight="Bold" Text="Select CodeQL packs to install"/></TextBlock>
+        <TextBox Grid.Column="1" HorizontalAlignment="Left" Margin="13,220,0,0" TextWrapping="Wrap" Text="Other" VerticalAlignment="Top" Width="120" />
 
     </Grid>
 </Window>

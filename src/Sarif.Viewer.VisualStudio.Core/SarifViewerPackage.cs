@@ -415,11 +415,12 @@ namespace Microsoft.Sarif.Viewer
 
         private static bool infoBarShown = false;
 
-        private static async Task CheckForCodeQLAsync()
+        private async Task CheckForCodeQLAsync()
         {
+            InfoBar infoBar = null;
             if (!CodeQLService.CodeQLIsInstalled())
             {
-                var infoBar = new InfoBar(
+                infoBar = new InfoBar(
                     content: new[]
                     {
                             new InfoBarTextSpan("CodeQL not installed. "),
@@ -428,19 +429,18 @@ namespace Microsoft.Sarif.Viewer
                     (actionItem) =>
                     {
                         CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                        codeQLInstallHelper.ShowDialog();
+                        bool? success = codeQLInstallHelper.ShowDialog();
+                        if (success == true)
+                        {
+                            this.JoinableTaskFactory.Run(async () => { await infoBar.CloseAsync(); });
+                        }
                     },
                     null,
                     default);
-                if (!infoBarShown)
-                {
-                    await infoBar.ShowAsync();
-                    infoBarShown = true;
-                }
             }
             else if ((await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0)
             {
-                var infoBar = new InfoBar(
+                 infoBar = new InfoBar(
                    content: new[]
                    {
                             new InfoBarTextSpan("No CodeQL Packs Found. "),
@@ -449,15 +449,19 @@ namespace Microsoft.Sarif.Viewer
                    (actionItem) =>
                    {
                        CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                       codeQLInstallHelper.ShowDialog();
+                       bool? success = codeQLInstallHelper.ShowDialog();
+                       if(success == true)
+                       {
+                           this.JoinableTaskFactory.Run(async () => { await infoBar.CloseAsync(); });
+                       }
                    },
                    null,
                    default);
-                if (!infoBarShown)
-                {
-                    await infoBar.ShowAsync();
-                    infoBarShown = true;
-                }
+            }
+            if (infoBar != null && !infoBarShown)
+            {
+                await infoBar.ShowAsync();
+                infoBarShown = true;
             }
             await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
         }

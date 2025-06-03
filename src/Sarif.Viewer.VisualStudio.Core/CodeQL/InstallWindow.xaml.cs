@@ -76,14 +76,23 @@ namespace Microsoft.Sarif.Viewer.Views
                 e.Result = false;
             }
         }
-        private void BackgroundWorkCompleted(object sender, EventArgs e)
+        private void BackgroundWorkCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            if (e.Error != null || e.Cancelled)
+            {
+                this.DialogResult = false;
+            }
+            else
+            {
+                this.DialogResult = true;
+            }
             this.Close();
         }
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)
         {
             backgroundWorker.CancelAsync();
             CodeQLService.Instance.CancelIfRunning();
+            this.DialogResult = false;
             this.Close();
         }
     }

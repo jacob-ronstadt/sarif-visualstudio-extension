@@ -30,6 +30,8 @@ namespace Microsoft.Sarif.Viewer.Views
             Owner = Application.Current.MainWindow;
             InitializeComponent();
             DataContext = this;
+            cliExpander.IsExpanded = true;
+            packsExpander.IsExpanded = true;
         }
 
         /// <summary>
@@ -51,7 +53,7 @@ namespace Microsoft.Sarif.Viewer.Views
             iw.Owner = this;
             iw.DataContext = this;
             iw.backgroundWorker.RunWorkerAsync();
-            iw.ShowDialog();
+            this.DialogResult = iw.ShowDialog();
             Close();
         }
 
@@ -67,6 +69,7 @@ namespace Microsoft.Sarif.Viewer.Views
         /// </param>
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)
         {
+            this.DialogResult = false;
             Close();
         }
         public async Task<string> GetLatestVersionAsync()
@@ -126,7 +129,9 @@ namespace Microsoft.Sarif.Viewer.Views
             {
                 _languagePacks.Remove(checkBox.Content.ToString());
             }
-            if(_languagePacks.Count > 0 && !string.IsNullOrEmpty(___TextBoxVersion_.Text))
+
+            if (_languagePacks.Count > 0 &&
+                (!string.IsNullOrEmpty(___TextBoxVersion_.Text) || CodeQLService.CodeQLIsInstalled()))
             {
                 buttonInstall.IsEnabled = true;
             }
@@ -134,6 +139,15 @@ namespace Microsoft.Sarif.Viewer.Views
             {
                 buttonInstall.IsEnabled = false;
             }
+        }
+    }
+   
+    public partial class CodeQLPackInstallHelper : CodeQLInstallHelper
+    {
+        public CodeQLPackInstallHelper() : base()
+        {
+            cliExpander.IsExpanded = false;
+            packsExpander.IsExpanded = true;
         }
     }
 }
