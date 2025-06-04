@@ -10,6 +10,7 @@ using System.Security.Policy;
 using System.Threading.Tasks;
 
 using Microsoft.CodeAnalysis.Sarif.Converters;
+using Microsoft.Sarif.Viewer.Controls;
 using Microsoft.Sarif.Viewer.ErrorList;
 using Microsoft.Sarif.Viewer.Services;
 using Microsoft.Sarif.Viewer.Views;
@@ -90,11 +91,6 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                 oleCommand = new OleMenuCommand(
                     this.MenuItemCallback,
                     new CommandID(CommandSet, CodeQLStopCommandId));
-                commandService.AddCommand(oleCommand);
-
-                oleCommand = new OleMenuCommand(
-                    this.MenuItemCallback,
-                    new CommandID(CommandSet, CodeQLDatabaseCommandId));
                 commandService.AddCommand(oleCommand);
 
                 oleCommand = new OleMenuCommand(
@@ -325,6 +321,57 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     _currentDropDownComboChoice = _discoveredComboChoices[0];
                 }
             }
+        }
+
+        private static InfoBar infoBar = null;
+
+        public static async Task CheckForCodeQLAsync()
+        {
+            if (!CodeQLService.CodeQLIsInstalled())
+            {
+                infoBar = new InfoBar(
+                    content: new[]
+                    {
+                            new InfoBarTextSpan("CodeQL not installed. "),
+                            new InfoBarButton("Click Here To Install CodeQL"),
+                    },
+                    (actionItem) =>
+                    {
+                        CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                        bool? success = codeQLInstallHelper.ShowDialog();
+                        if (success == true)
+                        {
+                            ThreadHelper.JoinableTaskFactory.Run(async () => { await infoBar.CloseAsync(); infoBar = null; });
+                        }
+                    },
+                    null,
+                    default);
+            }
+            else if ((await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0)
+            {
+                infoBar = new InfoBar(
+                  content: new[]
+                  {
+                            new InfoBarTextSpan("No CodeQL Packs Found. "),
+                            new InfoBarButton("Click Here To Install CodeQL Packs"),
+                  },
+                  (actionItem) =>
+                  {
+                      CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                      bool? success = codeQLInstallHelper.ShowDialog();
+                      if (success == true)
+                      {
+                          ThreadHelper.JoinableTaskFactory.Run(async () => { await infoBar.CloseAsync(); infoBar = null; });
+                      }
+                  },
+                  null,
+                  default);
+            }
+            if (infoBar != null)
+            {
+                await infoBar.ShowAsync();
+            }
+            await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
         }
     }
 }

@@ -50,7 +50,7 @@ namespace Microsoft.Sarif.Viewer
     [ProvideService(typeof(ISarifLocationTaggerService))]
     [ProvideService(typeof(ITextViewCaretListenerService<>))]
     [ProvideService(typeof(ISarifErrorListEventSelectionService))]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideOptionPage(typeof(SarifViewerGeneralOptionsPage), OptionCategoryName, OptionPageName, 0, 0, true)]
     [ProvideOptionPage(typeof(SarifViewerColorOptionsPage), OptionCategoryName, ColorsPageName, 0, 0, true)]
     // TODO add codeql options page
@@ -191,7 +191,7 @@ namespace Microsoft.Sarif.Viewer
                 // SolutionEvents.OnAfterBackgroundSolutionLoadComplete will not be triggered until the user opens another solution.
                 // Need to manually start monitor in this case.
                 this.sarifFolderMonitor?.StartWatching();
-                await CheckForCodeQLAsync();
+                await CodeQLCommand.CheckForCodeQLAsync();
             }
 
             SolutionEvents.OnBeforeCloseSolution += this.SolutionEvents_OnBeforeCloseSolution;
@@ -320,7 +320,7 @@ namespace Microsoft.Sarif.Viewer
             this.JoinableTaskFactory.Run(async () => await InitializeResultSourceHostAsync());
 
             // check codeql is installed and there are available packs
-            this.JoinableTaskFactory.Run(async () => await CheckForCodeQLAsync());
+            this.JoinableTaskFactory.Run(async () => await CodeQLCommand.CheckForCodeQLAsync());
         }
 
         /// <summary>
@@ -412,60 +412,7 @@ namespace Microsoft.Sarif.Viewer
                     break;
             }
         }
-
-        private static bool infoBarShown = false;
-
-        private async Task CheckForCodeQLAsync()
-        {
-            InfoBar infoBar = null;
-            if (!CodeQLService.CodeQLIsInstalled())
-            {
-                infoBar = new InfoBar(
-                    content: new[]
-                    {
-                            new InfoBarTextSpan("CodeQL not installed. "),
-                            new InfoBarButton("Click Here To Install CodeQL"),
-                    },
-                    (actionItem) =>
-                    {
-                        CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                        bool? success = codeQLInstallHelper.ShowDialog();
-                        if (success == true)
-                        {
-                            this.JoinableTaskFactory.Run(async () => { await infoBar.CloseAsync(); });
-                        }
-                    },
-                    null,
-                    default);
-            }
-            else if ((await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0)
-            {
-                 infoBar = new InfoBar(
-                   content: new[]
-                   {
-                            new InfoBarTextSpan("No CodeQL Packs Found. "),
-                            new InfoBarButton("Click Here To Install CodeQL Packs"),
-                   },
-                   (actionItem) =>
-                   {
-                       CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                       bool? success = codeQLInstallHelper.ShowDialog();
-                       if(success == true)
-                       {
-                           this.JoinableTaskFactory.Run(async () => { await infoBar.CloseAsync(); });
-                       }
-                   },
-                   null,
-                   default);
-            }
-            if (infoBar != null && !infoBarShown)
-            {
-                await infoBar.ShowAsync();
-                infoBarShown = true;
-            }
-            await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
-        }
-
+       
         private static string GetSolutionDirectoryPath()
         {
             var dte = (DTE2)Package.GetGlobalService(typeof(EnvDTE.DTE));
