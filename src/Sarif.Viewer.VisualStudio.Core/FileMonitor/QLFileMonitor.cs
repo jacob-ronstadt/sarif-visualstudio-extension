@@ -5,10 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-
 using Microsoft.CodeAnalysis.Sarif;
-using Microsoft.CodeAnalysis.Sarif.Converters;
-using Microsoft.Sarif.Viewer.ErrorList;
 using Microsoft.VisualStudio.Shell;
 
 namespace Microsoft.Sarif.Viewer.FileMonitor
@@ -16,19 +13,19 @@ namespace Microsoft.Sarif.Viewer.FileMonitor
     /// <summary>
     /// Watches a sarif log file in the file system, firing events when the file is changed or renamed.
     /// </summary>
-    internal class SarifLogsMonitor : IDisposable
+    internal class QLLogsMonitor : IDisposable
     {
         private readonly IFileSystem fileSystem;
 
         private IDictionary<string, Shell.IFileWatcher> FileWatcherMap { get; } =
             new ConcurrentDictionary<string, Shell.IFileWatcher>(StringComparer.OrdinalIgnoreCase);
 
-        internal SarifLogsMonitor(IFileSystem fs)
+        internal QLLogsMonitor(IFileSystem fs)
         {
             this.fileSystem = fs;
         }
 
-        internal static SarifLogsMonitor Instance = new SarifLogsMonitor(new FileSystem());
+        internal static QLLogsMonitor Instance = new QLLogsMonitor(new FileSystem());
 
         internal void StartWatching(string logFilePath)
         {
@@ -40,8 +37,10 @@ namespace Microsoft.Sarif.Viewer.FileMonitor
             if (!FileWatcherMap.ContainsKey(logFilePath))
             {
                 var watcher = new Shell.FileWatcher(Path.GetDirectoryName(logFilePath), Path.GetFileName(logFilePath));
-                watcher.FileChanged += this.Watcher_SarifLogFileChanged;
-                watcher.FileRenamed += this.Watcher_SarifLogFileRenamed;
+                watcher.FileChanged += this.Watcher_QLLogFileChanged;
+                watcher.FileRenamed += this.Watcher_QLLogFileRenamed;
+                watcher.FileCreated += this.Watcher_QLLogFileCreated;
+                watcher.FileDeleted += this.Watcher_QLLogFileDeleted;
                 FileWatcherMap.Add(logFilePath, watcher);
                 watcher.Start();
             }
@@ -57,7 +56,7 @@ namespace Microsoft.Sarif.Viewer.FileMonitor
             FileWatcherMap.Clear();
         }
 
-        private void Watcher_SarifLogFileRenamed(object sender, System.IO.RenamedEventArgs e)
+        private void Watcher_QLLogFileRenamed(object sender, System.IO.RenamedEventArgs e)
         {
             /*
              * When updating a file in VS, it saves file content to a new temp file and rename current file to another temp file,
@@ -67,22 +66,26 @@ namespace Microsoft.Sarif.Viewer.FileMonitor
              */
             if (FileWatcherMap.ContainsKey(e.FullPath))
             {
-                this.RefreshSarifErrors(e.FullPath);
             }
         }
 
-        private void Watcher_SarifLogFileChanged(object sender, System.IO.FileSystemEventArgs e)
+        private void Watcher_QLLogFileChanged(object sender, System.IO.FileSystemEventArgs e)
         {
-            this.RefreshSarifErrors(e.FullPath);
         }
 
-        private void RefreshSarifErrors(string filePath)
+        private void Watcher_QLLogFileCreated(object sender, System.IO.FileSystemEventArgs e)
         {
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            if (FileWatcherMap.ContainsKey(e.FullPath))
             {
-                await ErrorListService.CloseSarifLogItemsAsync(new string[] { filePath });
-                await ErrorListService.ProcessLogFileWithTracesAsync(filePath, ToolFormat.None, promptOnLogConversions: true, cleanErrors: false, openInEditor: false);
-            });
+            }
+        }
+
+        private void Watcher_QLLogFileDeleted(object sender, System.IO.FileSystemEventArgs e)
+        {
+            if (FileWatcherMap.ContainsKey(e.FullPath))
+            {
+                this.StopWatching(e.FullPath);
+            }
         }
 
         internal void StopWatching(string logFilePath)

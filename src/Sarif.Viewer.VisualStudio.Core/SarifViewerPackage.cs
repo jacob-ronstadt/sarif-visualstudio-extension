@@ -51,9 +51,9 @@ namespace Microsoft.Sarif.Viewer
     [ProvideService(typeof(ITextViewCaretListenerService<>))]
     [ProvideService(typeof(ISarifErrorListEventSelectionService))]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideOptionPage(typeof(CodeQLGeneralOptionsPage), CodeQLCategoryName, CodeQLPageName, 0, 0, true)]
     [ProvideOptionPage(typeof(SarifViewerGeneralOptionsPage), OptionCategoryName, OptionPageName, 0, 0, true)]
     [ProvideOptionPage(typeof(SarifViewerColorOptionsPage), OptionCategoryName, ColorsPageName, 0, 0, true)]
-    // TODO add codeql options page
     public sealed class SarifViewerPackage : AsyncPackage
     {
         private readonly List<OleMenuCommand> menuCommands = new List<OleMenuCommand>();
@@ -68,7 +68,9 @@ namespace Microsoft.Sarif.Viewer
         /// </summary>
         public const string PackageGuidString = "b97edb99-282e-444c-8f53-7de237f2ec5e";
         public const string OptionCategoryName = "SARIF Viewer";
+        public const string CodeQLCategoryName = "CodeQL";
         public const string OptionPageName = "General";
+        public const string CodeQLPageName = "General";
         public const string ColorsPageName = "Colors";
         public const string OutputPaneName = "SARIF Viewer";
 
@@ -164,6 +166,7 @@ namespace Microsoft.Sarif.Viewer
 
             // initialize Option first since other components may depends on options.
             await SarifViewerGeneralOptions.InitializeAsync(this).ConfigureAwait(false);
+            await CodeQLGeneralOptions.InitializeAsync(this).ConfigureAwait(false);
             await SarifViewerColorOptions.InitializeAsync(this).ConfigureAwait(false);
 
             if (await this.GetServiceAsync(typeof(SVsOutputWindow)).ConfigureAwait(continueOnCapturedContext: true) is IVsOutputWindow output)
@@ -198,7 +201,7 @@ namespace Microsoft.Sarif.Viewer
             SolutionEvents.OnAfterCloseSolution += this.SolutionEvents_OnAfterCloseSolution;
             SolutionEvents.OnAfterBackgroundSolutionLoadComplete += this.SolutionEvents_OnAfterBackgroundSolutionLoadComplete;
             SolutionEvents.OnBeforeOpenProject += this.SolutionEvents_OnBeforeOpenProject;
-
+            
             await this.InitializeResultSourceHostAsync();
             return;
         }

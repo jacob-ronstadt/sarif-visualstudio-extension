@@ -79,7 +79,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)ExceptionalConditions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ExceptionalConditionsCalculator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileAndForgetEventName.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\IQLFileMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\ISarifFileMonitor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\QLFileMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\SarifFolderMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\SarifLogsMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Fixes\ApplyFixEventArgs.cs" />
@@ -127,7 +129,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\VSSuppressionState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NotifyPropertyChangedObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)OpenLogFileCommands.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Options\CodeQLGeneralOptionsControl.xaml.cs">
+      <DependentUpon>CodeQLGeneralOptionsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Options\CodeQLGeneralOptionsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\ColorOption.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Options\ICodeQLGeneralOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\ISarifViewerColorOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\ISarifViewerGeneralOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\LocationTextDecoration.cs" />
@@ -137,6 +144,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Options\SarifViewerColorOptionsControl.xaml.cs">
       <DependentUpon>SarifViewerColorOptionsControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Options\CodeQLGeneralOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\SarifViewerGeneralOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\SarifViewerGeneralOptionsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Options\SarifViewerGeneralOptionsControl.xaml.cs">
@@ -268,6 +276,10 @@
     <Page Include="$(MSBuildThisFileDirectory)Fixes\DisposableDifferenceViewerControlStringResources.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="$(MSBuildThisFileDirectory)Options\CodeQLGeneralOptionsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="$(MSBuildThisFileDirectory)Options\SarifViewerColorOptionsControl.xaml">
       <SubType>Designer</SubType>
