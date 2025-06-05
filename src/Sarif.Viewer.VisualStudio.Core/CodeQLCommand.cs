@@ -325,7 +325,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 
         private static InfoBar infoBar = null;
 
-        public static async Task CheckForCodeQLAsync()
+        public static async System.Threading.Tasks.Task CheckForCodeQLAsync()
         {
             if (!CodeQLService.CodeQLIsInstalled())
             {
