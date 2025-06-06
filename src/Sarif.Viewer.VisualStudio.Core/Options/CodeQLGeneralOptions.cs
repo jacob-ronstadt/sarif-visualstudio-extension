@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Windows.Controls;
 
 using Microsoft.VisualStudio.Shell;
 
@@ -13,6 +14,16 @@ namespace Microsoft.Sarif.Viewer.Options
         private readonly AsyncPackage package;
 
         private readonly CodeQLGeneralOptionsPage optionPage;
+
+        public bool CliPath => this.optionPage?.cliPathOption.Text ?? "C:/codeql-hom/codeql/";
+
+        public bool AdditionalQueryLocations => this.optionPage?.queryLocationsOption.Text ?? "";
+
+        public bool MemoryUsage => this.optionPage?.memoryOption.Text ?? "";
+
+        public bool Threads => this.optionPage?.threadsOption.Text ?? "1";
+
+        public bool CustomBuildCommand => this.optionPage?.buildCmdOption.Text ?? "";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeQLGeneralOptions"/> class.
