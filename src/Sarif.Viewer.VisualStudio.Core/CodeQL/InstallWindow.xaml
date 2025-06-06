@@ -5,10 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Microsoft.Sarif.Viewer.Views"
         mc:Ignorable="d"
-        Title="CodeQL" Height="187" Width="365" WindowStyle="ToolWindow" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterOwner" Cursor="Wait">
+        Title="CodeQL" WindowStyle="ToolWindow" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterOwner" Cursor="Wait" SizeToContent="WidthAndHeight">
     <Grid>
-        <ProgressBar HorizontalAlignment="Center" Height="17" Margin="0,89,0,0" VerticalAlignment="Top" Width="263" IsIndeterminate="True"/>
-        <TextBlock HorizontalAlignment="Left" Margin="51,31,0,0" TextWrapping="Wrap" Text="Please wait..." VerticalAlignment="Top" Height="30" Width="300"/>
-        <Button Name="buttonCancel" Click="ButtonCancel_Click" VerticalAlignment="Bottom" Height="23" Content="Cancel" Margin="0,0,51,10" HorizontalAlignment="Right" Width="74" />
+        <StackPanel Margin="20, 20, 20, 20" MinHeight="50" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <TextBlock Margin="0, 0, 0, 30" HorizontalAlignment="Stretch" TextWrapping="Wrap" Text="Please wait..."/>
+            <ProgressBar Margin="0, 0, 0,40" HorizontalAlignment="Stretch" Height="17"   VerticalAlignment="stretch" IsIndeterminate="True"/>
+            <Button Name="buttonCancel" Margin="0, 0, 0, 0"  Click="ButtonCancel_Click" HorizontalAlignment="Right"  Height="23" Content="Cancel" Width="74" />
+        </StackPanel>
     </Grid>
 </Window>

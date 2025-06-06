@@ -51,14 +51,14 @@ namespace Microsoft.Sarif.Viewer.Views
         {
             try
             {
-                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallPacksAsync(_packs, _prerelease));
+                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.InstallCodeQLPacksAsync(_packs, _prerelease));
                 ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
                 e.Result = true; // FIXME Probably a better way to do this
             }
             catch (Exception ex)
             {
-                Trace.WriteLine($"CodeQL install fail. Threw exception: {ex.Message}");
                 e.Result = false;
+                throw new Exception(ex.Message, ex);
             }
         }
 
@@ -66,14 +66,14 @@ namespace Microsoft.Sarif.Viewer.Views
         {
             try
             {
-                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.CodeQLInstallAsync(_version, _path, _addToPath, _packs, _prerelease));
+                ThreadHelper.JoinableTaskFactory.Run(() => CodeQLService.Instance.InstallCodeQLAsync(_version, _path, _addToPath, _packs, _prerelease));
                 ThreadHelper.JoinableTaskFactory.Run(() => CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync());
                 e.Result = true;
             }
             catch (Exception ex)
             {
-                Trace.WriteLine($"CodeQL pack install fail. Threw exception: {ex.Message}");
                 e.Result = false;
+                throw new Exception(ex.Message, ex);
             }
         }
         private void BackgroundWorkCompleted(object sender, RunWorkerCompletedEventArgs e)

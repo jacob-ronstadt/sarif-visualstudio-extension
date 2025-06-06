@@ -8,7 +8,7 @@
     
     <system:String x:Key="SarifViewerOptionsControl_ColorBoxHeader">Colors</system:String>
 
-    <system:String x:Key="SarifViewerOptionsControl_MonitorSarifFolder">Load .sarif files from the .sarif folder automatically</system:String>
+    <system:String x:Key="  SarifViewerOptionsControl_MonitorSarifFolder">Load .sarif files from the .sarif folder automatically</system:String>
 
     <system:String x:Key="SarifViewerOptionsControl_EnableGitHubAdvancedSecurity">Enable GitHub Advanced Security scan results</system:String>
 

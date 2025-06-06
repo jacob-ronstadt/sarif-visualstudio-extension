@@ -79,9 +79,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)ExceptionalConditions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ExceptionalConditionsCalculator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileAndForgetEventName.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\IQLFileMonitor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\ICodeQLFileMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\ISarifFileMonitor.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\QLFileMonitor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\CodeQLFileMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\SarifFolderMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileMonitor\SarifLogsMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Fixes\ApplyFixEventArgs.cs" />

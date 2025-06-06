@@ -9,6 +9,8 @@ namespace Microsoft.Sarif.Viewer
 
         public const string SarifFileSearchPattern = "*.sarif";
 
+        public const string CodeQLFileSearchPattern = "*.ql";
+
         public static class FileAndForgetFaultEventNames
         {
             /// <summary>

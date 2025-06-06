@@ -233,17 +233,12 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <exception cref="CodeQLPacksNotFoundException"></exception>
         public async Task InstallDefaultPacksAsync(HashSet<string> packs, bool prerelease )
         {
+            List<Task> tasks = new List<Task>();
             foreach (string pack in EnumerateDefaultPacks(packs))
             {
-                try
-                {
-                    await InstallPackAsync(pack, prerelease);
-                }
-                catch (Exception ex)
-                {
-                    throw new CodeQLPacksNotFoundException("Could not install required CodeQL pack(s)", ex);
-                }
+                tasks.Add(InstallPackAsync(pack, prerelease, true));
             }
+            await Task.WhenAll(tasks);
         }
 
 

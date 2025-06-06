@@ -2,8 +2,10 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
@@ -185,7 +187,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     Trace.WriteLine("Creating CodeQL database");
                     try
                     {
-                        dbSuccessful = await CodeQLService.Instance.CodeQLGenerateDatabaseAsync();
+                        dbSuccessful = await CodeQLService.Instance.GenerateCodeQLDatabaseAsync();
                     }
                     catch (Exception)
                     {
@@ -205,7 +207,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                         Trace.WriteLine($"Starting CodeQL analysis using {_currentDropDownComboChoice}");
                         try
                         {
-                            await CodeQLService.Instance.CodeQLRunQuerySetAsync(_currentDropDownComboChoice.Trim().ToLower());
+                            await CodeQLService.Instance.RunCodeQLQueryAsync(_currentDropDownComboChoice.Trim().ToLower());
                         }
                         catch (Exception)
                         {
@@ -233,7 +235,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                         }
 
                         CodeQLService.Instance.InitTask();
-                        _ = await CodeQLService.Instance.CodeQLGenerateDatabaseAsync();
+                        _ = await CodeQLService.Instance.GenerateCodeQLDatabaseAsync();
                         CodeQLService.Instance.ClearTask();
                     }
                     catch (Exception ex)
@@ -291,12 +293,15 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                 }
                 else if (vOut != IntPtr.Zero)
                 {
+                    _discoveredComboChoices = CodeQLService.Instance.AvailableQueries.ToArray();
                     if (_discoveredComboChoices == null)
                     {
-                        _discoveredComboChoices = CodeQLService.Instance.AvailableQueries.ToArray();
-                       
                         _ = ThreadHelper.JoinableTaskFactory.RunAsync(async () => await CodeqlRefreshAvailableQueriesAsync());
+                    }
 
+                    if (!_discoveredComboChoices.Contains(_currentDropDownComboChoice))
+                    {
+                        _currentDropDownComboChoice = _discoveredComboChoices[0]
                     }
                     Marshal.GetNativeVariantForObject(_discoveredComboChoices, vOut);
                 }
@@ -315,7 +320,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
         {
             if (CodeQLService.CodeQLIsInstalled())
             {
-                _discoveredComboChoices = await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync();
+                _discoveredComboChoices = await CodeQLService.Instance.FindAvailableQueriesAsync();
                 if (_discoveredComboChoices != null && _discoveredComboChoices.Length != 0)
                 {
                     _currentDropDownComboChoice = _discoveredComboChoices[0];
@@ -347,7 +352,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     null,
                     default);
             }
-            else if ((await CodeQLService.Instance.CodeQLFindAvailableQueriesAsync()).Length == 0)
+            else if ((await CodeQLService.Instance.FindAvailableQueriesAsync()).Length == 0)
             {
                 infoBar = new InfoBar(
                   content: new[]

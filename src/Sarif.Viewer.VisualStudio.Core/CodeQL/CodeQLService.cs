@@ -29,8 +29,12 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
         private static CodeQLService _instance = null;
         private CancellationTokenSource _cancelToken;
         private TaskCompletionSource<bool> _taskCompleted;
+
+        /// <summary>
+        /// Dictionary of query names to be displayed in the UI, and their full path.
+        /// </summary>  
         private readonly Dictionary<string, string> _queryDict;
-        public  List<string> AvailableQueries 
+        public List<string> AvailableQueries 
         { 
             get 
             {
@@ -169,18 +173,16 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             _queryDict.Add(newValueKey.ToString(), newValue);
         }
 
-        public async Task<string[]> CodeQLFindAvailableQueriesAsync()
+        public async Task<string[]> FindAvailableQueriesAsync()
         {
             List<string> packList = await CodeQLRunner.Instance.FindPacksAsync();
             List<string> queryList = await CodeQLRunner.Instance.FindQueriesAsync(packList, queriesNSuites: false);
-            _queryDict.Clear();
             foreach (string query in queryList)
             {
                 string key = query.Replace("\\", "/").Split('/').Last();
                 if (_queryDict.ContainsKey(key))
                 {
                     HandleKeyCollision(key, query);
-
                 }
                 else
                 {
@@ -191,12 +193,33 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             return _queryDict.Keys.ToArray();
         }
 
-        public async System.Threading.Tasks.Task CodeQLInstallPacksAsync(HashSet<string> packs, bool prerelease)
+        public void AddAdditionalQueries(List<string> queries)
+        {
+            foreach (string query in queries)
+            {
+                string key = query.Replace("\\", "/").Split('/').Last();
+                if (!_queryDict.ContainsKey(key))
+                {
+                    _queryDict.Add(key, query.Replace("\\", "/"));
+                }
+            }
+        }
+
+        public void RemoveQuery(string query)
+        {
+            string key = query.Replace("\\", "/").Split('/').Last();
+            if (_queryDict.ContainsKey(key))
+            {
+                _queryDict.Remove(key);
+            }
+        }
+
+        public async System.Threading.Tasks.Task InstallCodeQLPacksAsync(HashSet<string> packs, bool prerelease)
         {
             await CodeQLRunner.Instance.InstallDefaultPacksAsync(packs, prerelease);
         }
 
-        public async System.Threading.Tasks.Task CodeQLInstallAsync(string version, string installPath, bool addToPath, HashSet<string> packs, bool preReleasePacks)
+        public async System.Threading.Tasks.Task InstallCodeQLAsync(string version, string installPath, bool addToPath, HashSet<string> packs, bool preReleasePacks)
         {
             if (string.IsNullOrEmpty(installPath))
             {
@@ -206,7 +229,13 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             {
                 Directory.CreateDirectory(installPath);
             }
-            if(!Version.TryParse(version, out _))
+            if(Directory.Exists(System.IO.Path.Combine(installPath, "codeql")))
+            {
+                // If codeql already exists, delete it
+                Directory.Delete(System.IO.Path.Combine(installPath, "codeql"), true);
+            }
+
+            if (!Version.TryParse(version, out _))
             {
                 throw new Exception("Version Error");
             }
@@ -223,9 +252,9 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             }
             System.IO.Compression.ZipFile.ExtractToDirectory(System.IO.Path.Combine(installPath, "codeql.zip"), installPath);
 
-            await CodeQLInstallPacksAsync(packs, preReleasePacks);
+            await InstallCodeQLPacksAsync(packs, preReleasePacks);
 
-            await CodeQLFindAvailableQueriesAsync();
+            await FindAvailableQueriesAsync();
             if (addToPath)
             {
                 Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User) + ";" + System.IO.Path.Combine(installPath, "codeql"), EnvironmentVariableTarget.User);
@@ -237,7 +266,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
            return CodeQLRunner.IsInstalled();
         }
 
-        public async System.Threading.Tasks.Task CodeQLRunQuerySetAsync(string query)
+        public async System.Threading.Tasks.Task RunCodeQLQueryAsync(string query)
         {
             if (!_queryDict.TryGetValue(query, out string querySet)) 
             {
@@ -284,7 +313,8 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
         {
             Trace.WriteLine(message);
         }
-        public async System.Threading.Tasks.Task<bool> CodeQLGenerateDatabaseAsync()
+
+        public async System.Threading.Tasks.Task<bool> GenerateCodeQLDatabaseAsync()
         {
             await ProjectHelper.ShowProgressAsync("Generating CodeQL Database...");
 

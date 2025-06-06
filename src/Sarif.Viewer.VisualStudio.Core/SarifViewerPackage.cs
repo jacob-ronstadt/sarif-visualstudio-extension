@@ -101,6 +101,7 @@ namespace Microsoft.Sarif.Viewer
         }
 
         private SarifFolderMonitor sarifFolderMonitor;
+        private CodeQLFileMonitor codeqlFileMonitor;
 
         /// <summary>
         /// Contains the list of services and their creator functions.
@@ -186,6 +187,7 @@ namespace Microsoft.Sarif.Viewer
             CodeQLCommand.Initialize(this);
 
             this.sarifFolderMonitor = new SarifFolderMonitor();
+            this.codeqlFileMonitor = new CodeQLFileMonitor();
 
             if (await this.IsSolutionLoadedAsync())
             {
@@ -194,6 +196,7 @@ namespace Microsoft.Sarif.Viewer
                 // SolutionEvents.OnAfterBackgroundSolutionLoadComplete will not be triggered until the user opens another solution.
                 // Need to manually start monitor in this case.
                 this.sarifFolderMonitor?.StartWatching();
+                this.codeqlFileMonitor?.StartWatching();
                 await CodeQLCommand.CheckForCodeQLAsync();
             }
 
@@ -210,6 +213,7 @@ namespace Microsoft.Sarif.Viewer
         {
             // start watcher when the solution is opened.
             this.sarifFolderMonitor?.StartWatching();
+            this.codeqlFileMonitor?.StartWatching();
 
             this.JoinableTaskFactory.Run(async () => await InitializeResultSourceHostAsync());
         }
@@ -298,6 +302,7 @@ namespace Microsoft.Sarif.Viewer
         {
             // stop watcher when the solution is closed.
             this.sarifFolderMonitor?.StopWatching();
+            this.codeqlFileMonitor?.StopWatching();
 
             if (this.resultSourceHost != null)
             {
@@ -319,6 +324,7 @@ namespace Microsoft.Sarif.Viewer
         {
             // start to watch when the solution is loaded.
             this.sarifFolderMonitor?.StartWatching();
+            this.codeqlFileMonitor?.StartWatching();
 
             this.JoinableTaskFactory.Run(async () => await InitializeResultSourceHostAsync());
 

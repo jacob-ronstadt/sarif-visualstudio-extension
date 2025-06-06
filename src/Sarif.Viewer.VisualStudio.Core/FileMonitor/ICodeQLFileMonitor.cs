@@ -3,7 +3,7 @@
 
 namespace Microsoft.Sarif.Viewer.FileMonitor
 {
-    public interface IQLFileMonitor
+    public interface ICodeQLFileMonitor
     {
         void StartWatch(string solutionFolder = null);
 
