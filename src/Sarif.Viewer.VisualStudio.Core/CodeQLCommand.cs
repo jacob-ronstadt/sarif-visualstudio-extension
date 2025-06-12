@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Sarif.Converters;
 using Microsoft.Sarif.Viewer.Controls;
 using Microsoft.Sarif.Viewer.ErrorList;
+using Microsoft.Sarif.Viewer.Options;
 using Microsoft.Sarif.Viewer.Services;
 using Microsoft.Sarif.Viewer.Views;
 using Microsoft.VisualStudio.Shell;
@@ -116,6 +117,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     new CommandID(CommandSet, ComboGetListId));
                 commandService.AddCommand(oleCommand);
             }
+            CodeQLService.CodeQLUpateExePath();
         }
 
         /// <summary>
@@ -301,7 +303,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 
                     if (!_discoveredComboChoices.Contains(_currentDropDownComboChoice))
                     {
-                        _currentDropDownComboChoice = _discoveredComboChoices[0]
+                        _currentDropDownComboChoice = _discoveredComboChoices[0];
                     }
                     Marshal.GetNativeVariantForObject(_discoveredComboChoices, vOut);
                 }

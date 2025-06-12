@@ -15,15 +15,15 @@ namespace Microsoft.Sarif.Viewer.Options
 
         private readonly CodeQLGeneralOptionsPage optionPage;
 
-        public bool CliPath => this.optionPage?.cliPathOption.Text ?? "C:/codeql-hom/codeql/";
+        public string CliPath => this.optionPage?.CliPathOption ?? "C:/codeql-home/codeql/";
 
-        public bool AdditionalQueryLocations => this.optionPage?.queryLocationsOption.Text ?? "";
+        public string AdditionalQueryLocations => this.optionPage?.QueryLocationsOption ?? "";
 
-        public bool MemoryUsage => this.optionPage?.memoryOption.Text ?? "";
+        public string MemoryUsage => this.optionPage?.MemoryOption ?? "";
 
-        public bool Threads => this.optionPage?.threadsOption.Text ?? "1";
+        public string Threads => this.optionPage?.ThreadsOption ?? "1";
 
-        public bool CustomBuildCommand => this.optionPage?.buildCmdOption.Text ?? "";
+        public string CustomBuildCommand => this.optionPage?.BuildCmdOption ?? "";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeQLGeneralOptions"/> class.

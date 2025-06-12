@@ -66,7 +66,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <summary>
         /// TaskCompletionSource for process exit event.
         /// </summary>
-        private readonly string codeQLExe;
+        private static string codeQLExe;
 
         /// <summary>
         /// Private instance of the CodeQLRunner class.
@@ -155,7 +155,22 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             this.buildEnv = buildEnv;
         }
 
-
+        public static bool UpdateCodeQLExePath(string newPath)
+        {
+            if (Directory.Exists(newPath) && File.Exists(Path.Combine(newPath, "codeql.exe")))
+            {
+                codeQLExe = newPath;
+            }
+            else if (Path.GetFileName(newPath).ToLower().Equals("codeql.exe"))
+            {
+                codeQLExe = Path.GetDirectoryName(newPath);
+            }
+            else
+            {
+                return false;
+            }
+            return true;
+        }
 
         /// <summary>
         /// Gets the instance of the service.
@@ -324,9 +339,10 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the process fails.</exception>
-        public async Task<List<string>> FindPacksAsync()
+        public async Task<List<string>> FindPacksAsync(string additionalSearchPath = null)
         {
-            string output = await RunCodeQLProcAsync("resolve packs --show-hidden-packs --format=json");
+            string useSearchPath = string.IsNullOrWhiteSpace(additionalSearchPath) ? string.Empty : "--search-path=" + additionalSearchPath + " ";
+            string output = await RunCodeQLProcAsync("resolve packs --show-hidden-packs --format=json " + useSearchPath);
             var packs = new List<string>();
             foreach (string line in output.Split(
                                     new string[] { "\r\n", "\r", "\n" },
@@ -354,7 +370,12 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// <exception cref="CodeQLExeNotFoundException">Thrown when CodeQL is not found.</exception>
         public static string GetInstalLocation()
         {
-            if (System.IO.File.Exists(defaultCodeQLPath))
+           
+            if(!string.IsNullOrEmpty(codeQLExe) && System.IO.File.Exists(codeQLExe))
+            {
+                return codeQLExe;
+            }
+            else if (System.IO.File.Exists(defaultCodeQLPath))
             {
                 return defaultCodeQLPath;
             }
@@ -568,7 +589,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         /// </summary>
         /// <returns>The path to the generated database.</returns>
         /// <exception cref="Exception">Thrown if the analysis directory does not exist.</exception>
-        public async Task GenerateDatabaseAsync(string buildCommand, CancellationToken ct, Action<object, System.EventArgs> proccessExitedFunc = null)
+        public async Task GenerateDatabaseAsync(string buildCommand, CancellationToken ct, string ram = null, string threads = null, Action<object, System.EventArgs> proccessExitedFunc = null)
         {
             if (ct.IsCancellationRequested)
             {
@@ -585,7 +606,8 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
 
             string strCmdText = string.Empty;
             string dbPath = Path.Combine(analysisDir, "codeql_db");
-
+            string useThreads = string.IsNullOrWhiteSpace(threads) ? "" : "--threads=" + threads;
+            string useRam = string.IsNullOrWhiteSpace(ram) ? "" : "--ram=" + ram;
             string[] procArr =
             {
                 codeQLExe, "database",
@@ -594,6 +616,8 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 "--language=cpp",
                 "--source-root=" + "\"" + analysisDir + "\"",
                 "--command=" + "\"" + buildCommand + "\"",
+                useThreads,
+                useRam
             };
             strCmdText = string.Join(" ", procArr);
             if (!string.IsNullOrWhiteSpace(buildEnv))
@@ -609,7 +633,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         ///
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<string> RunCodeQLQuerySetAsync(string query, CancellationToken ct, Action<object, System.EventArgs> proccessExitedFunc = null)
+        public async Task<string> RunCodeQLQuerySetAsync(string query, CancellationToken ct, string ram = null, string threads = null, Action<object, System.EventArgs> proccessExitedFunc = null)
         {
             if (ct.IsCancellationRequested)
             {
@@ -646,6 +670,8 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
 
             string resultsPath = Path.Combine(resultsDir, "results.sarif");
+            string useThreads = string.IsNullOrWhiteSpace(threads) ? "": "--threads=" + threads;
+            string useRam = string.IsNullOrWhiteSpace(ram) ? "": "--ram=" + ram;
 
             string[] procArr =
             {
@@ -654,6 +680,8 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 "-v",
                 "--format=sarifv2.1.0",
                 "--output=" + "\"" + resultsPath + "\"",
+                useThreads, 
+                useRam,
                 query,
             };
 

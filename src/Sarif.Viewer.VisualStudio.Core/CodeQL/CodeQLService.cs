@@ -15,6 +15,7 @@ using EnvDTE;
 
 using Microsoft.CodeAnalysis.Sarif.Converters;
 using Microsoft.Sarif.Viewer.ErrorList;
+using Microsoft.Sarif.Viewer.Options;
 using Microsoft.Sarif.Viewer.Services;
 using Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner;
 using Microsoft.VisualStudio.Shell;
@@ -168,14 +169,19 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                 throw new Exception("Unable to find new key");
             }
             _queryDict.Remove(existingKey);
-            _queryDict.Add(replacementKey.ToString(), string.Join("/", existingValueParts));
-
-            _queryDict.Add(newValueKey.ToString(), newValue);
+            if (!_queryDict.ContainsKey(replacementKey.ToString()))
+            {
+                _queryDict.Add(replacementKey.ToString(), string.Join("/", existingValueParts));
+            }
+            if (!_queryDict.ContainsKey(replacementKey.ToString()))
+            {
+                _queryDict.Add(newValueKey.ToString(), newValue);
+            }
         }
 
         public async Task<string[]> FindAvailableQueriesAsync()
         {
-            List<string> packList = await CodeQLRunner.Instance.FindPacksAsync();
+            List<string> packList = await CodeQLRunner.Instance.FindPacksAsync(CodeQLGeneralOptions.Instance.AdditionalQueryLocations);
             List<string> queryList = await CodeQLRunner.Instance.FindQueriesAsync(packList, queriesNSuites: false);
             foreach (string query in queryList)
             {
@@ -261,6 +267,10 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             }
         }
 
+        public static void CodeQLUpateExePath()
+        {
+            CodeQLRunner.UpdateCodeQLExePath( CodeQLGeneralOptions.Instance.CliPath ?? "" );
+        }
         public static bool CodeQLIsInstalled()
         {
            return CodeQLRunner.IsInstalled();
@@ -289,8 +299,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     : throw new ArgumentException("Query file does not exist: " + querySet);
             }
             await ProjectHelper.ShowProgressAsync("Analyzing CodeQL Database...");
-            string sarifResults = await CodeQLRunner.Instance.RunCodeQLQuerySetAsync(querySet, _cancelToken.Token);
-            
+            string sarifResults = await CodeQLRunner.Instance.RunCodeQLQuerySetAsync(querySet, _cancelToken.Token, ram: CodeQLGeneralOptions.Instance.MemoryUsage, threads: CodeQLGeneralOptions.Instance.Threads);
             try
             {
                 await ErrorListService.ProcessLogFileWithTracesAsync(sarifResults, ToolFormat.None, promptOnLogConversions: true, cleanErrors: true, openInEditor: false).ConfigureAwait(continueOnCapturedContext: false);
@@ -338,9 +347,18 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
 
                 CodeQLRunner.Instance.Initialize(projectDir, startCommand, CodeQLOutput);
             });
+            string buildCmd = string.Empty;
+            if (!string.IsNullOrWhiteSpace(CodeQLGeneralOptions.Instance.CustomBuildCommand))
+            {
+                buildCmd = CodeQLGeneralOptions.Instance.CustomBuildCommand;
+            }
+            else
+            {
+                buildCmd = "msbuild /t:rebuild /p:Configuration=" + configName + " /p:Platform=" + arch;
+            }
 
-            string buildCmd = "msbuild /t:rebuild /p:Configuration=" + configName + " /p:Platform=" + arch;
-            await CodeQLRunner.Instance.GenerateDatabaseAsync(buildCmd, _cancelToken.Token);
+
+            await CodeQLRunner.Instance.GenerateDatabaseAsync(buildCmd, _cancelToken.Token, ram: CodeQLGeneralOptions.Instance.MemoryUsage, threads: CodeQLGeneralOptions.Instance.Threads );
             _taskCompleted.TrySetResult(true);
             return true;
         }

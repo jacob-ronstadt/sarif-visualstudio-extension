@@ -20,11 +20,15 @@ namespace Microsoft.Sarif.Viewer.Options
             _codeqlViewerOptionsControl = new Lazy<CodeQLGeneralOptionsControl>(() => new CodeQLGeneralOptionsControl(this));
         }
 
-        public bool MonitorSarifFolder { get; set; } = true;
+        public string CliPathOption { get; set; } = "";
 
-        public bool EnableGitHubAdvancedSecurity { get; set; } = false;
+        public string QueryLocationsOption { get; set; } = "";
 
-        public bool EnableKeyEventAdornment { get; set; } = true;
+        public string MemoryOption { get; set; } = "";
+
+        public string ThreadsOption { get; set; } = "1";
+
+        public string BuildCmdOption { get; set; } = "";
 
         /// <summary>
         /// Gets the Windows Presentation Foundation (WPF) child element to be hosted inside the Options dialog page.
