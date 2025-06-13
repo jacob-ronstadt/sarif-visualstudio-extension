@@ -49,7 +49,7 @@
                              TextWrapping="Wrap" 
                              Text="{Binding QueryLocationsOption, Mode=TwoWay}"
                              Width="120" 
-                             ToolTip="Directories separated with semicolon where additional CodeQL queries can be found."/>
+                             ToolTip="Directories separated with semicolon where to search for additional CodeQL Packs."/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="5,5,5,5">
                     <Label Content="Memory Usage: "/>

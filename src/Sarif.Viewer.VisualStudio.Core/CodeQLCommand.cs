@@ -209,13 +209,13 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                         Trace.WriteLine($"Starting CodeQL analysis using {_currentDropDownComboChoice}");
                         try
                         {
-                            await CodeQLService.Instance.RunCodeQLQueryAsync(_currentDropDownComboChoice.Trim().ToLower());
+                            await CodeQLService.Instance.RunCodeQLQueryAsync(_currentDropDownComboChoice.Trim());
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             CodeQLService.Instance.ClearTask();
                             VsShellUtilities.ShowMessageBox(Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider,
-                                                            $"CodeQL analysis failed. See output for details.",
+                                                            $"CodeQL analysis failed. See output for details. " + ex.Message,
                                                             null, // title
                                                             OLEMSGICON.OLEMSGICON_CRITICAL,
                                                             OLEMSGBUTTON.OLEMSGBUTTON_OK,

@@ -72,6 +72,7 @@ namespace Microsoft.Sarif.Viewer.Views
             }
             catch (Exception ex)
             {
+                // TODO warn if codeql.exe exist and is locked
                 e.Result = false;
                 throw new Exception(ex.Message, ex);
             }
