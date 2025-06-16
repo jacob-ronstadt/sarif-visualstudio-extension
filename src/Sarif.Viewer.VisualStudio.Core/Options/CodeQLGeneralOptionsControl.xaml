@@ -49,7 +49,7 @@
                     <Label Content="Additional CodeQL Pack Locations: "/>
                     <TextBox x:Name="queryLocationsOptionTextBox" 
                              TextWrapping="Wrap" 
-                             Text="{Binding QueryLocationsOption, Mode=TwoWay}"
+                             Text="{Binding QueryLocationsOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              Width="120" 
                              ToolTip="Directories separated with semicolon where to search for additional CodeQL Packs."
                              AutomationProperties.AutomationId="queryLocationsOptionTextBox" />
