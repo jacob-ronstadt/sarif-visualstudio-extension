@@ -299,7 +299,10 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
                     : throw new ArgumentException("Query file does not exist: " + querySet);
             }
             await ProjectHelper.ShowProgressAsync("Analyzing CodeQL Database...");
-            string sarifResults = await CodeQLRunner.Instance.RunCodeQLQuerySetAsync(querySet, _cancelToken.Token, ram: CodeQLGeneralOptions.Instance.MemoryUsage, threads: CodeQLGeneralOptions.Instance.Threads);
+            string sarifResults = await CodeQLRunner.Instance.RunCodeQLQuerySetAsync(querySet, _cancelToken.Token, 
+                ram: CodeQLGeneralOptions.Instance.MemoryUsage, 
+                threads: CodeQLGeneralOptions.Instance.Threads, 
+                additionalSearchPath: CodeQLGeneralOptions.Instance.AdditionalQueryLocations);
             try
             {
                 await ErrorListService.ProcessLogFileWithTracesAsync(sarifResults, ToolFormat.None, promptOnLogConversions: true, cleanErrors: true, openInEditor: false).ConfigureAwait(continueOnCapturedContext: false);

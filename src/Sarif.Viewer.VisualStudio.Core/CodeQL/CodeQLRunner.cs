@@ -606,8 +606,9 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
 
             string strCmdText = string.Empty;
             string dbPath = Path.Combine(analysisDir, "codeql_db");
-            string useThreads = string.IsNullOrWhiteSpace(threads) ? "" : "--threads=" + threads;
-            string useRam = string.IsNullOrWhiteSpace(ram) ? "" : "--ram=" + ram;
+            string useThreads = string.IsNullOrWhiteSpace(threads) ? "" : " --threads=" + threads + " ";
+            string useRam = string.IsNullOrWhiteSpace(ram) ? "" : " --ram=" + ram + " " ;
+
             string[] procArr =
             {
                 codeQLExe, "database",
@@ -633,7 +634,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
         ///
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<string> RunCodeQLQuerySetAsync(string query, CancellationToken ct, string ram = null, string threads = null, Action<object, System.EventArgs> proccessExitedFunc = null)
+        public async Task<string> RunCodeQLQuerySetAsync(string query, CancellationToken ct, string ram = null, string threads = null, string additionalSearchPath = null, Action<object, System.EventArgs> proccessExitedFunc = null)
         {
             if (ct.IsCancellationRequested)
             {
@@ -670,8 +671,9 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
             }
 
             string resultsPath = Path.Combine(resultsDir, "results.sarif");
-            string useThreads = string.IsNullOrWhiteSpace(threads) ? "": "--threads=" + threads;
-            string useRam = string.IsNullOrWhiteSpace(ram) ? "": "--ram=" + ram;
+            string useThreads = string.IsNullOrWhiteSpace(threads) ? "": " --threads=" + threads + " ";
+            string useRam = string.IsNullOrWhiteSpace(ram) ? "": " --ram=" + ram + " ";
+            string useSearchPath = string.IsNullOrWhiteSpace(additionalSearchPath) ? string.Empty : " --search-path=" + additionalSearchPath + " ";
 
             string[] procArr =
             {
@@ -683,6 +685,7 @@ namespace Microsoft.VisualStudio.CodeAnalysis.CodeQL.Runner
                 useThreads, 
                 useRam,
                 query,
+                useSearchPath
             };
 
             strCmdText = string.Join(" ", procArr);

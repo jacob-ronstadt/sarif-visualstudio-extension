@@ -21,13 +21,9 @@ namespace Microsoft.Sarif.Viewer.Options
         }
 
         public string CliPathOption { get; set; } = "";
-
         public string QueryLocationsOption { get; set; } = "";
-
         public string MemoryOption { get; set; } = "";
-
         public string ThreadsOption { get; set; } = "1";
-
         public string BuildCmdOption { get; set; } = "";
 
         /// <summary>

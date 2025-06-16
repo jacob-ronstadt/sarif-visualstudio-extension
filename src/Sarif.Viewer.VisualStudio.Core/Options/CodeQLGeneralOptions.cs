@@ -11,20 +11,16 @@ namespace Microsoft.Sarif.Viewer.Options
 {
     internal class CodeQLGeneralOptions : ICodeQLGeneralOptions
     {
+        private readonly string cliPathDefaultValue = "C:/codeql-home/codeql/";
+        private readonly string additionalQueryLocationsDefaultValue = "";
+        private readonly string memoryUsageDefaultValue = "";
+        private readonly string threadsDefaultValue = "1";
+        private readonly string customBuildCommandDefaultValue = "";
         private readonly AsyncPackage package;
 
         private readonly CodeQLGeneralOptionsPage optionPage;
 
-        public string CliPath => this.optionPage?.CliPathOption ?? "C:/codeql-home/codeql/";
-
-        public string AdditionalQueryLocations => this.optionPage?.QueryLocationsOption ?? "";
-
-        public string MemoryUsage => this.optionPage?.MemoryOption ?? "";
-
-        public string Threads => this.optionPage?.ThreadsOption ?? "1";
-
-        public string CustomBuildCommand => this.optionPage?.BuildCmdOption ?? "";
-
+     
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeQLGeneralOptions"/> class.
         /// Get visual studio option values.
@@ -37,6 +33,12 @@ namespace Microsoft.Sarif.Viewer.Options
         }
 
         private CodeQLGeneralOptions() { }
+        public string CliPath => this.optionPage?.CliPathOption ?? cliPathDefaultValue;
+        public string AdditionalQueryLocations => this.optionPage?.QueryLocationsOption ?? additionalQueryLocationsDefaultValue;
+        public string MemoryUsage => this.optionPage?.MemoryOption ?? memoryUsageDefaultValue;
+        public string Threads => this.optionPage?.ThreadsOption ?? threadsDefaultValue;
+        public string CustomBuildCommand => this.optionPage?.BuildCmdOption ?? customBuildCommandDefaultValue;
+
 
         public readonly Dictionary<string, bool> OptionStates;
 

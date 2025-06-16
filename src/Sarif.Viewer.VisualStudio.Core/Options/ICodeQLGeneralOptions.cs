@@ -5,6 +5,10 @@ namespace Microsoft.Sarif.Viewer.Options
 {
     internal interface ICodeQLGeneralOptions
     {
-      
+        string CliPath { get; }
+        string AdditionalQueryLocations { get; }
+        string MemoryUsage { get; }
+        string Threads { get; }
+        string CustomBuildCommand { get; }
     }
 }

@@ -83,6 +83,7 @@ namespace Microsoft.Sarif.Viewer.FileMonitor
                 // no need to watch for the CodeQL file log updates
                 // because when we load the CodeQL log file in the viewer, it's already monitored by the viewer's file watcher
                 this.fileWatcher.FileCreated += this.Watcher_CodeQLFileCreated;
+                this.fileWatcher.FileRenamed += this.Watcher_CodeQLFileRenamed;
                 this.fileWatcher.FileDeleted += this.Watcher_CodeQLFileDeleted;
                 this.fileWatcher.Start();
             }
@@ -98,6 +99,7 @@ namespace Microsoft.Sarif.Viewer.FileMonitor
                 this.fileWatcher.Stop();
                 this.fileWatcher.FileCreated -= this.Watcher_CodeQLFileCreated;
                 this.fileWatcher.FileDeleted -= this.Watcher_CodeQLFileDeleted;
+                this.fileWatcher.FileRenamed -= this.Watcher_CodeQLFileRenamed;
                 this.fileWatcher = null;
             }
 
@@ -131,6 +133,21 @@ namespace Microsoft.Sarif.Viewer.FileMonitor
             }
         }
 
+        private void Watcher_CodeQLFileRenamed(object sender, RenamedEventArgs e)
+        {
+            if (SarifViewerPackage.IsUnitTesting)
+            {
+            }
+            else
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    CodeQLService.Instance.RemoveQuery(e.OldFullPath);
+                    CodeQLService.Instance.AddAdditionalQueries(new List<string>(new[] { e.FullPath }));
+                });
+            }
+        }
         private void Watcher_CodeQLFileCreated(object sender, FileSystemEventArgs e)
         {
             if (SarifViewerPackage.IsUnitTesting)

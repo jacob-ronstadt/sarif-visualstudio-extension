@@ -41,15 +41,19 @@
                              TextWrapping="Wrap" 
                              Text="{Binding CliPathOption, Mode=TwoWay}"
                              Width="120" 
-                             ToolTip="Path to CodeQL executable that will be used instead of the default."/>
+                             ToolTip="Path to CodeQL executable that will be used instead of the default."
+                             AutomationProperties.AutomationId="cliPathOptionTextBox" />
+
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="5,5,5,5">
-                    <Label Content="Additional Query Locations: "/>
+                    <Label Content="Additional CodeQL Pack Locations: "/>
                     <TextBox x:Name="queryLocationsOptionTextBox" 
                              TextWrapping="Wrap" 
                              Text="{Binding QueryLocationsOption, Mode=TwoWay}"
                              Width="120" 
-                             ToolTip="Directories separated with semicolon where to search for additional CodeQL Packs."/>
+                             ToolTip="Directories separated with semicolon where to search for additional CodeQL Packs."
+                             AutomationProperties.AutomationId="queryLocationsOptionTextBox" />
+
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="5,5,5,5">
                     <Label Content="Memory Usage: "/>
@@ -57,7 +61,9 @@
                              TextWrapping="Wrap" 
                              Text="{Binding MemoryOption, Mode=TwoWay}" 
                              Width="120" 
-                             ToolTip="How much memory (MB) to use when running CodeQL. Leave blank to let CodeQL decide based on your system."/>
+                             ToolTip="How much memory (MB) to use when running CodeQL. Leave blank to let CodeQL decide based on your system."
+                             AutomationProperties.AutomationId="memoryOptionTextBox" />
+
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="5,5,5,5">
                     <Label Content="Number of Threads: "/>
@@ -65,7 +71,9 @@
                              TextWrapping="Wrap" 
                              Text="{Binding ThreadsOption, Mode=TwoWay}" 
                              Width="120" 
-                             ToolTip="Number of threads to use when running CodeQL. Use 0 to indicate one thread per core."/>
+                             ToolTip="Number of threads to use when running CodeQL. Use 0 to indicate one thread per core."
+                             AutomationProperties.AutomationId="threadsOptionTextBox" />
+
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="5,5,5,5">
                     <Label Content="Custom Build Command "/>
@@ -73,7 +81,9 @@
                              TextWrapping="Wrap" 
                              Text="{Binding BuildCmdOption, Mode=TwoWay}" 
                              Width="120" 
-                             ToolTip="Custom command to build the project." />
+                             ToolTip="Custom command to build the project." 
+                             AutomationProperties.AutomationId="buildCmdOptionTextBox" />
+
                 </StackPanel>
             </StackPanel>
         </GroupBox>
