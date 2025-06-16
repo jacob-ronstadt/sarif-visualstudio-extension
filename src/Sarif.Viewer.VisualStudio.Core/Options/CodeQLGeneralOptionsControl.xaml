@@ -39,7 +39,7 @@
                     <Label Content="Exeutable path: "/>
                     <TextBox x:Name="cliPathOptionTextBox" 
                              TextWrapping="Wrap" 
-                             Text="{Binding CliPathOption, Mode=TwoWay}"
+                             Text="{Binding CliPathOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              Width="120" 
                              ToolTip="Path to CodeQL executable that will be used instead of the default."
                              AutomationProperties.AutomationId="cliPathOptionTextBox" />
@@ -59,7 +59,7 @@
                     <Label Content="Memory Usage: "/>
                     <TextBox x:Name="memoryOptionTextBox" 
                              TextWrapping="Wrap" 
-                             Text="{Binding MemoryOption, Mode=TwoWay}" 
+                             Text="{Binding MemoryOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                              Width="120" 
                              ToolTip="How much memory (MB) to use when running CodeQL. Leave blank to let CodeQL decide based on your system."
                              AutomationProperties.AutomationId="memoryOptionTextBox" />
@@ -69,7 +69,7 @@
                     <Label Content="Number of Threads: "/>
                     <TextBox x:Name="threadsOptionTextBox" 
                              TextWrapping="Wrap" 
-                             Text="{Binding ThreadsOption, Mode=TwoWay}" 
+                             Text="{Binding ThreadsOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                              Width="120" 
                              ToolTip="Number of threads to use when running CodeQL. Use 0 to indicate one thread per core."
                              AutomationProperties.AutomationId="threadsOptionTextBox" />
@@ -79,7 +79,7 @@
                     <Label Content="Custom Build Command "/>
                     <TextBox x:Name="buildCmdOptionTextBox" 
                              TextWrapping="Wrap" 
-                             Text="{Binding BuildCmdOption, Mode=TwoWay}" 
+                             Text="{Binding BuildCmdOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                              Width="120" 
                              ToolTip="Custom command to build the project." 
                              AutomationProperties.AutomationId="buildCmdOptionTextBox" />
