@@ -12,8 +12,8 @@ $Frameworks = @("net472")
 
 $Projects = @{}
 $Projects.Vsix = @(
-	"Sarif.Viewer.VisualStudio.2022",
-	"Sarif.Viewer.VisualStudio")
+	"Sarif.Viewer.VisualStudio.2022"
+	)
 $Projects.NuGet = @("Sarif.Viewer.VisualStudio.Interop")
 $Projects.Library = @(
 	"Sarif.Viewer.VisualStudio.ResultSources.ACL.2022",

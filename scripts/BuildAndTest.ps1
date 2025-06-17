@@ -85,7 +85,7 @@ function New-SigningDirectory {
 
     foreach ($framework in $Frameworks) {
         New-DirectorySafely $SigningDirectory\$framework
-        New-DirectorySafely $SigningDirectory\$framework\2019
+        # New-DirectorySafely $SigningDirectory\$framework\2019
         New-DirectorySafely $SigningDirectory\$framework\2022
     }
 
@@ -105,7 +105,7 @@ function New-SigningDirectory {
     # Copy the Viewer assemblies. The names don't fit the pattern binary name == project name,
     # so we copy them by hand.
     foreach ($framework in $Frameworks) {
-        Copy-Item -Force -Path $BinRoot\${Platform}_$Configuration\Sarif.Viewer.VisualStudio\*Sarif.Viewer*.dll -Destination $SigningDirectory\$framework\2019
+        # Copy-Item -Force -Path $BinRoot\${Platform}_$Configuration\Sarif.Viewer.VisualStudio\*Sarif.Viewer*.dll -Destination $SigningDirectory\$framework\2019
         Copy-Item -Force -Path $BinRoot\${Platform}_$Configuration\Sarif.Viewer.VisualStudio.2022\*Sarif.Viewer*.dll -Destination $SigningDirectory\$framework\2022
     }
 }

@@ -111,7 +111,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.UnitTests
 ";
             int numberOfException = numberOfExceptionLogged;
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(invalidJson));
-            ErrorListService.ProcessSarifLogAsync(stream, "logId", false, false).ConfigureAwait(false);
+            _ = ErrorListService.ProcessSarifLogAsync(stream, "logId", false, false).ConfigureAwait(false);
             // 1 exception logged
             numberOfExceptionLogged.Should().Be(numberOfException + 1);
         }
@@ -152,7 +152,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.UnitTests
 ";
             int numberOfException = this.numberOfExceptionLogged;
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonNotCompatible));
-            ErrorListService.ProcessSarifLogAsync(stream, "logId", false, false).ConfigureAwait(false);
+            _ =ErrorListService.ProcessSarifLogAsync(stream, "logId", false, false).ConfigureAwait(false);
             // 1 exception logged
             this.numberOfExceptionLogged.Should().Be(numberOfException + 1);
         }
@@ -218,7 +218,7 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.UnitTests
 
             ErrorListService.ErrorListInstance.ColumnFilterer = mockColumnFilter.Object;
 
-            ErrorListService.ProcessSarifLogAsync(testLog, "logId", false, false).ConfigureAwait(false);
+            _ = ErrorListService.ProcessSarifLogAsync(testLog, "logId", false, false).ConfigureAwait(false);
 
             this.logExceptionalConditions.HasFlag(ExceptionalConditions.ResultsFiltered).Should().BeTrue();
         }

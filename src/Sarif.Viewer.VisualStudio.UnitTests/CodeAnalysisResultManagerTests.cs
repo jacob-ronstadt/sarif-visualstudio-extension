@@ -771,10 +771,9 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.UnitTests
 #pragma warning disable VSTHRD010 // Invoke single-threaded types on Main thread
             solution.SetupGet(s => s.IsOpen).Returns(true);
             solution.SetupGet(s => s.FullName).Returns(solutionFile);
-#pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
-
             var dte = new Mock<DTE2>();
             dte.SetupGet(d => d.Solution).Returns(solution.Object);
+#pragma warning restore VSTHRD010 // Invoke single-threaded types on Main thread
 
             return dte.Object;
         }

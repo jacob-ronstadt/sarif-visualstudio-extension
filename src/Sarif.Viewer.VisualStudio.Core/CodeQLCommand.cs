@@ -330,53 +330,59 @@ namespace Microsoft.Sarif.Viewer.VisualStudio.Core.CodeQL
             }
         }
 
-        private static InfoBar infoBar = null;
+        private static InfoBar noCodeQLInfoBar = null;
 
         public static async System.Threading.Tasks.Task CheckForCodeQLAsync()
         {
-            if (!CodeQLService.CodeQLIsInstalled())
+            if (!CodeQLService.CodeQLIsInstalled() )
             {
-                infoBar = new InfoBar(
-                    content: new[]
-                    {
-                            new InfoBarTextSpan("CodeQL not installed. "),
-                            new InfoBarButton("Click Here To Install CodeQL"),
-                    },
-                    (actionItem) =>
-                    {
-                        CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                        bool? success = codeQLInstallHelper.ShowDialog();
-                        if (success == true)
+                if(noCodeQLInfoBar == null)
+                {
+                    noCodeQLInfoBar = new InfoBar(
+                        content: new[]
                         {
-                            ThreadHelper.JoinableTaskFactory.Run(async () => { await infoBar.CloseAsync(); infoBar = null; });
-                        }
-                    },
-                    null,
-                    default);
+                                new InfoBarTextSpan("CodeQL not installed. "),
+                                new InfoBarButton("Click Here To Install CodeQL"),
+                        },
+                        (actionItem) =>
+                        {
+                            CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                            bool? success = codeQLInstallHelper.ShowDialog();
+                            if (success == true)
+                            {
+                                ThreadHelper.JoinableTaskFactory.Run(async () => { await noCodeQLInfoBar.CloseAsync(); noCodeQLInfoBar = null; });
+                            }
+                        },
+                        null,
+                        default);
+                }
             }
-            else if ((await CodeQLService.Instance.FindAvailableQueriesAsync()).Length == 0)
+            else if ((await CodeQLService.Instance.FindAvailableQueriesAsync()).Length == 0 )
             {
-                infoBar = new InfoBar(
-                  content: new[]
-                  {
-                            new InfoBarTextSpan("No CodeQL Packs Found. "),
-                            new InfoBarButton("Click Here To Install CodeQL Packs"),
-                  },
-                  (actionItem) =>
-                  {
-                      CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
-                      bool? success = codeQLInstallHelper.ShowDialog();
-                      if (success == true)
-                      {
-                          ThreadHelper.JoinableTaskFactory.Run(async () => { await infoBar.CloseAsync(); infoBar = null; });
-                      }
-                  },
-                  null,
-                  default);
+                if (noCodeQLInfoBar == null)
+                {
+                    noCodeQLInfoBar = new InfoBar(
+                        content: new[]
+                        {
+                                new InfoBarTextSpan("No CodeQL Packs Found. "),
+                                new InfoBarButton("Click Here To Install CodeQL Packs"),
+                        },
+                        (actionItem) =>
+                        {
+                            CodeQLInstallHelper codeQLInstallHelper = new CodeQLInstallHelper();
+                            bool? success = codeQLInstallHelper.ShowDialog();
+                            if (success == true)
+                            {
+                                ThreadHelper.JoinableTaskFactory.Run(async () => { await noCodeQLInfoBar.CloseAsync(); noCodeQLInfoBar = null; });
+                            }
+                        },
+                        null,
+                        default);
+                }
             }
-            if (infoBar != null)
+            if (noCodeQLInfoBar != null)
             {
-                await infoBar.ShowAsync();
+                await noCodeQLInfoBar.ShowAsync();
             }
             await CodeQLCommand.Instance.CodeqlRefreshAvailableQueriesAsync();
         }
